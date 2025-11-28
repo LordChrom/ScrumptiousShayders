@@ -156,8 +156,8 @@ float GetCloudMask(vec3 viewPos, float z) {
 	float fogOffset = 12.0;
 	#endif
 
-	#ifdef DISTANT_HORIZONS
-	float fogFar = float(dhRenderDistance);
+	#ifdef LOD_RENDERER
+	float fogFar = float(lodRenderDistance);
 	float vanillaDensity = 0.4 * sqrt(FOG_DENSITY_VANILLA);
 	#else
 	float fogFar = far;

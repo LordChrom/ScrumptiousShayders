@@ -142,22 +142,22 @@ float AmbientOcclusion(float dither) {
 	return ao;
 }
 
-#ifdef DISTANT_HORIZONS
+#ifdef LOD_RENDERER
 vec3 GetDHViewPos(vec3 screenPos) {
-	vec4 viewPos = dhProjectionInverse * (vec4(screenPos, 1.0) * 2.0 - 1.0);
+	vec4 viewPos = lodProjectionInverse * (vec4(screenPos, 1.0) * 2.0 - 1.0);
 	return viewPos.xyz / viewPos.w;
 }
 
 vec3 GetDHReconstructedNormal(float z, float linZ, vec3 viewPos) {
-	float eZ = texture2D(dhDepthTex0, texCoord.xy + vec2(pw, 0.0)).r;
-	float wZ = texture2D(dhDepthTex0, texCoord.xy - vec2(pw, 0.0)).r;
-	float nZ = texture2D(dhDepthTex0, texCoord.xy + vec2(0.0, ph)).r;
-	float sZ = texture2D(dhDepthTex0, texCoord.xy - vec2(0.0, ph)).r;
+	float eZ = texture2D(lodDepthTex0, texCoord.xy + vec2(pw, 0.0)).r;
+	float wZ = texture2D(lodDepthTex0, texCoord.xy - vec2(pw, 0.0)).r;
+	float nZ = texture2D(lodDepthTex0, texCoord.xy + vec2(0.0, ph)).r;
+	float sZ = texture2D(lodDepthTex0, texCoord.xy - vec2(0.0, ph)).r;
 
-	float eLinZ = GetLinearDepth(eZ, dhProjectionInverse);
-	float wLinZ = GetLinearDepth(wZ, dhProjectionInverse);
-	float nLinZ = GetLinearDepth(nZ, dhProjectionInverse);
-	float sLinZ = GetLinearDepth(sZ, dhProjectionInverse);
+	float eLinZ = GetLinearDepth(eZ, lodProjectionInverse);
+	float wLinZ = GetLinearDepth(wZ, lodProjectionInverse);
+	float nLinZ = GetLinearDepth(nZ, lodProjectionInverse);
+	float sLinZ = GetLinearDepth(sZ, lodProjectionInverse);
 
 	vec3 hDeriv = vec3(0.0);
 	bool useE = abs(eLinZ - linZ) < abs(wLinZ - linZ);
@@ -192,10 +192,10 @@ float DHAmbientOcclusion(float dither) {
 	float ao = 0.0;
 	float pointiness = 0.0;
 	
-	float z = texture2D(dhDepthTex0, texCoord).r;
+	float z = texture2D(lodDepthTex0, texCoord).r;
 	if(z >= 1.0) return 1.0;
 
-	float linZ = GetLinearDepth(z, dhProjectionInverse);
+	float linZ = GetLinearDepth(z, lodProjectionInverse);
 
 	#ifdef TAA
 	#if TAA_MODE == 0
@@ -226,7 +226,7 @@ float DHAmbientOcclusion(float dither) {
 
 		for(int j = 0; j < 2; j++){
 			vec2 sampleCoord = texCoord + offset;
-			float sampleZ = texture2D(dhDepthTex0, sampleCoord).r;
+			float sampleZ = texture2D(lodDepthTex0, sampleCoord).r;
 			vec3 sampleViewPos = GetDHViewPos(vec3(sampleCoord, sampleZ));
 			vec3 difference = (sampleViewPos.xyz - viewPos.xyz) / (radius * currentStep * differenceScale);
 			float attenuation = clamp(1.0 + 0.5 / currentStep - 0.25 * length(difference), 0.0, 1.0);
@@ -251,7 +251,7 @@ float DHAmbientOcclusion(float dither) {
 		float angle = 0.0, dist = 0.0;
 
 		for(int i = 0; i < 2; i++){
-			float sampleDepth = GetLinearDepth(texture2D(dhDepthTex0, texCoord + offset).r, dhProjectionInverse);
+			float sampleDepth = GetLinearDepth(texture2D(lodDepthTex0, texCoord + offset).r, lodProjectionInverse);
 			float aoSample = (linZ - sampleDepth) * mult / currentStep;
 
 			angle += clamp(0.5 - aoSample, 0.0, 1.0);

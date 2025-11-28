@@ -68,10 +68,6 @@ uniform vec3 previousCameraPosition;
 uniform sampler2D colortex9;
 #endif
 
-#ifdef DISTANT_HORIZONS
-uniform int dhRenderDistance;
-uniform float dhFarPlane;
-#endif
 
 //Common Variables//
 float eBS = eyeBrightnessSmooth.y / 240.0;

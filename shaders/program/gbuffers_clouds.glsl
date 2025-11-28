@@ -35,10 +35,10 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowProjection;
 uniform mat4 shadowModelView;
 
-#ifdef DISTANT_HORIZONS
-uniform mat4 dhProjectionInverse;
+#ifdef LOD_RENDERER
+uniform mat4 lodProjectionInverse;
 
-uniform sampler2D dhDepthTex0;
+uniform sampler2D lodDepthTex0;
 #endif
 
 //Common Variables//
@@ -95,11 +95,11 @@ void main() {
 	albedo.a *= color.a * vanillaFog;
 	#endif
 
-	#ifdef DISTANT_HORIZONS
-	float dhZ = texture2D(dhDepthTex0, gl_FragCoord.xy / vec2(viewWidth, viewHeight)).r;
+	#ifdef LOD_RENDERER
+	float dhZ = texture2D(lodDepthTex0, gl_FragCoord.xy / vec2(viewWidth, viewHeight)).r;
 
 	vec4 dhScreenPos = vec4(screenPos.xy, dhZ, 1.0);
-	vec4 dhViewPos = dhProjectionInverse * (dhScreenPos * 2.0 - 1.0);
+	vec4 dhViewPos = lodProjectionInverse * (dhScreenPos * 2.0 - 1.0);
 	dhViewPos /= dhViewPos.w;
 	if (length(dhViewPos) < length(viewPos)) {
 		discard;

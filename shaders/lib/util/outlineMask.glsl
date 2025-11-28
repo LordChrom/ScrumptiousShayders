@@ -20,14 +20,14 @@ float GetOutlineMask() {
             float linZ0 = GetLinearDepth(z0, gbufferProjectionInverse);
             float linZ1 = GetLinearDepth(z1, gbufferProjectionInverse);
 
-            #ifdef DISTANT_HORIZONS
+            #ifdef LOD_RENDERER
             if (z0 >= 1.0) {
-                z0 = texture2D(dhDepthTex0, texCoord + offset).r;
-                linZ0 = GetLinearDepth(z0, dhProjectionInverse);
+                z0 = texture2D(lodDepthTex0, texCoord + offset).r;
+                linZ0 = GetLinearDepth(z0, lodProjectionInverse);
             }
             if (z1 >= 1.0) {
-                z1 = texture2D(dhDepthTex1, texCoord + offset).r;
-                linZ1 = GetLinearDepth(z1, dhProjectionInverse);
+                z1 = texture2D(lodDepthTex1, texCoord + offset).r;
+                linZ1 = GetLinearDepth(z1, lodProjectionInverse);
             }
             #endif
 

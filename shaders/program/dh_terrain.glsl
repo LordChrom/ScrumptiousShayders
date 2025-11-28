@@ -40,7 +40,7 @@ uniform ivec2 eyeBrightnessSmooth;
 
 uniform vec3 cameraPosition;
 
-uniform mat4 dhProjectionInverse;
+uniform mat4 lodProjectionInverse;
 uniform mat4 gbufferModelView, gbufferModelViewInverse;
 uniform mat4 shadowProjection;
 uniform mat4 shadowModelView;
@@ -65,7 +65,7 @@ vec2 dcdy = dFdy(texCoord);
 
 vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
 
-mat4 gbufferProjectionInverse = dhProjectionInverse;
+mat4 gbufferProjectionInverse = lodProjectionInverse;
 
 //Common Functions//
 float GetLuminance(vec3 color) {
@@ -258,7 +258,7 @@ uniform float timeAngle;
 
 uniform vec3 cameraPosition;
 
-uniform mat4 dhProjection;
+uniform mat4 lodProjection;
 uniform mat4 gbufferModelView, gbufferModelViewInverse;
 
 #ifdef TAA
@@ -296,13 +296,16 @@ void main() {
 	lmCoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 	lmCoord = clamp((lmCoord - 0.03125) * 1.06667, vec2(0.0), vec2(0.9333, 1.0));
 
-	int blockID = dhMaterialId;
 
 	normal = normalize(gl_NormalMatrix * gl_Normal);
     
 	color = gl_Color;
 	
 	mat = 0.0;
+
+	#ifdef DISTANT_HORIZONS
+	int blockID = dhMaterialId;
+
 
 	if (blockID == DH_BLOCK_LEAVES){
 		mat = 2.0;
@@ -314,6 +317,7 @@ void main() {
 		mat = 4.0;
 		lmCoord.x += 0.0667;
 	}
+	#endif
 
 	const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 	float ang = fract(timeAngle - 0.25);
@@ -337,7 +341,7 @@ void main() {
 	}
     #endif
 
-	gl_Position = dhProjection * gbufferModelView * position;
+	gl_Position = lodProjection * gbufferModelView * position;
 	
 	#ifdef TAA
 	gl_Position.xy = TAAJitter(gl_Position.xy, gl_Position.w);

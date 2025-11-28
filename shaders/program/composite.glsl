@@ -73,14 +73,12 @@ uniform sampler2D colortex9;
 uniform sampler2D gaux1;
 #endif
 
-#ifdef DISTANT_HORIZONS
-uniform int dhRenderDistance;
-uniform float dhFarPlane;
+#ifdef LOD_RENDERER
 
-uniform mat4 dhProjection, dhProjectionInverse;
+uniform mat4 lodProjection, lodProjectionInverse;
 
-uniform sampler2D dhDepthTex0;
-uniform sampler2D dhDepthTex1;
+uniform sampler2D lodDepthTex0;
+uniform sampler2D lodDepthTex1;
 #endif
 
 //Optifine Constants//

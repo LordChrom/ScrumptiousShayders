@@ -88,10 +88,6 @@ uniform sampler2D colortex9;
 uniform sampler2D gaux1;
 #endif
 
-#ifdef DISTANT_HORIZONS
-uniform int dhRenderDistance;
-uniform float dhFarPlane;
-#endif
 
 //Common Variables//
 float eBS = eyeBrightnessSmooth.y / 240.0;
@@ -306,8 +302,8 @@ void main() {
 
 		#if CLOUDS == 2
 		float cloudMaxDistance = 2.0 * far;
-		#ifdef DISTANT_HORIZONS
-		cloudMaxDistance = max(cloudMaxDistance, dhFarPlane);
+		#ifdef LOD_RENDERER
+		cloudMaxDistance = max(cloudMaxDistance, lodFarPlane);
 		#endif
 
 		float cloudViewLength = texture2D(gaux1, screenPos.xy).r * cloudMaxDistance;

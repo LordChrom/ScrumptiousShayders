@@ -19,8 +19,8 @@ void DepthOutline(inout float z, sampler2D depthtex) {
 	}
 }
 
-#ifdef DISTANT_HORIZONS
-void DHDepthOutline(inout float z, sampler2D depthtex) {
+#ifdef LOD_RENDERER
+void LodDepthOutline(inout float z, sampler2D depthtex) {
 	if (z < 1.0) return;
 
 	float ph = ceil(viewHeight / 1440.0) / viewHeight;

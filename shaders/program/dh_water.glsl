@@ -23,7 +23,6 @@ varying vec4 color;
 
 //Uniforms//
 uniform int bedrockLevel;
-uniform int dhRenderDistance;
 uniform int frameCounter;
 uniform int isEyeInWater;
 uniform int moonPhase;
@@ -31,7 +30,6 @@ uniform int worldTime;
 
 uniform float blindFactor, darknessFactor, nightVision;
 uniform float cloudHeight;
-uniform float dhFarPlane;
 uniform float far, near;
 uniform float frameTimeCounter;
 uniform float rainStrength;
@@ -44,7 +42,7 @@ uniform ivec2 eyeBrightnessSmooth;
 
 uniform vec3 cameraPosition, previousCameraPosition;
 
-uniform mat4 dhProjection, dhPreviousProjection, dhProjectionInverse;
+uniform mat4 lodProjection, lodPreviousProjection, lodProjectionInverse;
 uniform mat4 gbufferModelView, gbufferPreviousModelView, gbufferModelViewInverse;
 uniform mat4 shadowProjection;
 uniform mat4 shadowModelView;
@@ -77,9 +75,9 @@ vec2 dcdy = dFdy(texCoord);
 
 vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
 
-mat4 gbufferProjection = dhProjection;
-mat4 gbufferPreviousProjection = dhPreviousProjection;
-mat4 gbufferProjectionInverse = dhProjectionInverse;
+mat4 gbufferProjection = lodProjection;
+mat4 gbufferPreviousProjection = lodPreviousProjection;
+mat4 gbufferProjectionInverse = lodProjectionInverse;
 
 //Common Functions//
 float GetLuminance(vec3 color) {
@@ -229,8 +227,8 @@ void main() {
 
 		#if CLOUDS == 2
 		float cloudMaxDistance = 2.0 * far;
-		#ifdef DISTANT_HORIZONS
-		cloudMaxDistance = max(cloudMaxDistance, dhFarPlane);
+		#ifdef LOD_RENDERER
+		cloudMaxDistance = max(cloudMaxDistance, lodFarPlane);
 		#endif
 
 		float cloudViewLength = texture2D(gaux1, screenPos.xy).r * cloudMaxDistance;
@@ -518,8 +516,10 @@ void main() {
 	color = gl_Color;
 	
 	mat = 0.0;
-	
+
+	#ifdef DISTANT_HORIZONS
 	if (blockID == DH_BLOCK_WATER) mat = 1.0;
+	#endif
 
 	const vec2 sunRotationData = vec2(
 		 cos(sunPathRotation * 0.01745329251994),

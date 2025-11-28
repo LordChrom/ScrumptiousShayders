@@ -93,7 +93,7 @@ void NormalFog(inout vec3 color, vec3 viewPos) {
 	float fog = viewLength * fogDensity / 1024.0;
 	float clearDay = sunSkyVisibility * (1.0 - rainStrength);
 
-	#ifdef DISTANT_HORIZONS
+	#ifdef LOD_RENDERER
 	fog *= FOG_DENSITY_DH;
 	#endif
 
@@ -124,8 +124,8 @@ void NormalFog(inout vec3 color, vec3 viewPos) {
 		float fogOffset = 12.0;
 		#endif
 
-		#ifdef DISTANT_HORIZONS
-		float fogFar = float(dhRenderDistance);
+		#ifdef LOD_RENDERER
+		float fogFar = float(lodRenderDistance)*2.0;
 		float vanillaDensity = 0.4 * sqrt(FOG_DENSITY_VANILLA);
 		#else
 		float fogFar = far;
@@ -156,10 +156,10 @@ void NormalFog(inout vec3 color, vec3 viewPos) {
 	float fog = 2.0 * pow(viewLength * fogDensity / 256.0, 1.5);
 
 	#ifdef FAR_VANILLA_FOG_NETHER_END
-	#ifndef DISTANT_HORIZONS
+	#ifndef LOD_RENDERER
 	fog += 6.0 * pow(fogFactor * 1.5 / far, 4.0);
 	#else
-	fog += 6.0 * pow(fogFactor * 3.0 / dhFarPlane, 4.0);
+	fog += 6.0 * pow(fogFactor * 3.0 / lodFarPlane, 4.0);
 	#endif
 	#endif
 
@@ -172,10 +172,10 @@ void NormalFog(inout vec3 color, vec3 viewPos) {
 	float fog = viewLength * fogDensity / 512.0;
 
 	#ifdef FAR_VANILLA_FOG_NETHER_END
-	#ifndef DISTANT_HORIZONS
+	#ifndef LOD_RENDERER
 	fog += 2.0 * pow(fogFactor * 1.5 / far, 4.0);
 	#else
-	fog += 2.0 * pow(fogFactor * 3.0 / dhFarPlane, 4.0);
+	fog += 2.0 * pow(fogFactor * 3.0 / lodFarPlane, 4.0);
 	#endif
 	#endif
 
@@ -187,6 +187,8 @@ void NormalFog(inout vec3 color, vec3 viewPos) {
 	#endif
 	#endif
 
+//	fog = 0;
+	
 	color = mix(color, fogColor, fog);
 }
 

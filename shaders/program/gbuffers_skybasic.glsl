@@ -41,10 +41,6 @@ uniform mat4 gbufferProjectionInverse;
 
 uniform sampler2D noisetex;
 
-#ifdef DISTANT_HORIZONS
-uniform int dhRenderDistance;
-#endif
-
 //Common Variables//
 #ifdef WORLD_TIME_ANIMATION
 float time = float(worldTime) * 0.05 * ANIMATION_SPEED;

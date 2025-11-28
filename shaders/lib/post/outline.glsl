@@ -2,10 +2,10 @@ float SampleFullLinearDepth(vec2 coord) {
     float z = texture2D(depthtex0, coord).r;
     float linZ = GetLinearDepth(z, gbufferProjectionInverse);
 
-    #ifdef DISTANT_HORIZONS
+    #ifdef LOD_RENDERER
     if (z >= 1.0) {
-        z = texture2D(dhDepthTex0, coord).r;
-        linZ = GetLinearDepth(z, dhProjectionInverse);
+        z = texture2D(lodDepthTex0, coord).r;
+        linZ = GetLinearDepth(z, lodProjectionInverse);
     }
     #endif
 
@@ -18,11 +18,11 @@ vec3 GetOutlinedViewPos(float linZ) {
     vec4 viewPos = gbufferProjectionInverse * (vec4(texCoord.x, texCoord.y, z, 1.0) * 2.0 - 1.0);
 	viewPos /= viewPos.w;
     
-    #ifdef DISTANT_HORIZONS
+    #ifdef LOD_RENDERER
     if (z > 1.0) {
-        z = GetNonLinearDepth(linZ, dhProjection);
+        z = GetNonLinearDepth(linZ, lodProjection);
 
-        viewPos = dhProjectionInverse * (vec4(texCoord.x, texCoord.y, z, 1.0) * 2.0 - 1.0);
+        viewPos = lodProjectionInverse * (vec4(texCoord.x, texCoord.y, z, 1.0) * 2.0 - 1.0);
     	viewPos /= viewPos.w;
     }
     #endif

@@ -541,8 +541,11 @@ option.FOG_DENSITY_DAMP.comment=Adjusts fog density multiplier while standing on
 option.FOG_DENSITY_INDOOR=Indoor Density
 option.FOG_DENSITY_INDOOR.comment=Adjusts fog density multiplier while indoors.
 
-option.FOG_DENSITY_DH=Distant Horizons Density
-option.FOG_DENSITY_DH.comment=Adjusts overworld fog density multiplier while Distant Horizons is enabled.
+option.FOG_DENSITY_DH=LOD fog Density
+option.FOG_DENSITY_DH.comment=Adjusts overworld fog density multiplier while an LOD mod is enabled.
+
+option.FOG_DISTANCE_LOD=LOD fog distance adjustment
+option.FOG_DISTANCE_LOD.comment=adjusts what is considered the render distance when an LOD mod is used
 
 #Height Fog
 option.FOG_HEIGHT_Y=Base Height

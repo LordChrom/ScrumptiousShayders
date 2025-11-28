@@ -25,10 +25,9 @@ uniform mat4 gbufferProjectionInverse;
 uniform sampler2D depthtex0;
 uniform sampler2D noisetex;
 
-#ifdef DISTANT_HORIZONS
-uniform float dhFarPlane, dhNearPlane;
-uniform mat4 dhProjectionInverse;
-uniform sampler2D dhDepthTex0;
+#ifdef LOD_RENDERER
+uniform mat4 lodProjectionInverse;
+uniform sampler2D lodDepthTex0;
 #endif
 
 //Common Variables//
@@ -42,10 +41,16 @@ float GetLinearDepth(float depth, mat4 invProjMatrix) {
     return -zw.x / zw.y;
 }
 
+#ifdef LOD_RENDERER
 #ifdef DISTANT_HORIZONS
-float GetDHLinearDepth(float depth) {
+float GetLodLinearDepth(float depth) {
    return (2.0 * dhNearPlane) / (dhFarPlane + dhNearPlane - depth * (dhFarPlane - dhNearPlane));
 }
+#else
+float GetLodLinearDepth(float depth) {
+    return (32.0) / (48016 - depth * (47984));
+}
+#endif
 #endif
 
 //Includes//
@@ -56,7 +61,7 @@ void main() {
 	float blueNoise = texture2D(noisetex, gl_FragCoord.xy / 512.0).b;
     float ao = AmbientOcclusion(blueNoise);
 
-    #ifdef DISTANT_HORIZONS
+    #ifdef LOD_RENDERER
     float z = texture2D(depthtex0, texCoord.xy).r;
     if (z == 1.0) {
         ao = DHAmbientOcclusion(blueNoise);

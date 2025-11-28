@@ -59,13 +59,11 @@ uniform sampler2D colortex8;
 uniform sampler2D colortex9;
 #endif
 
-#ifdef DISTANT_HORIZONS
-uniform int dhRenderDistance;
-uniform float dhFarPlane, dhNearPlane;
+#ifdef LOD_RENDERER
 
-uniform mat4 dhProjection, dhProjectionInverse;
+uniform mat4 lodProjection, lodProjectionInverse;
 
-uniform sampler2D dhDepthTex0;
+uniform sampler2D lodDepthTex0;
 #endif
 
 //Optifine Constants//
@@ -157,20 +155,26 @@ float GetAmbientOcclusion(float z){
 	return pow(ao, AO_STRENGTH);
 }
 
+#ifdef LOD_RENDERER
 #ifdef DISTANT_HORIZONS
-float GetDHLinearDepth(float depth) {
-   return (2.0 * dhNearPlane) / (dhFarPlane + dhNearPlane - depth * (dhFarPlane - dhNearPlane));
+float GetLodLinearDepth(float depth) {
+	return (2.0 * dhNearPlane) / (dhFarPlane + dhNearPlane - depth * (dhFarPlane - dhNearPlane));
 }
+#else
+float GetLodLinearDepth(float depth) {
+	return (32.0) / (48016 - depth * (47984));
+}
+#endif
 
-float GetDHAmbientOcclusion(float dhZ){
+float GetLodAmbientOcclusion(float lodZ){
 	float ao = 0.0;
 	float tw = 0.0;
-	float lz = GetLinearDepth(dhZ, dhProjectionInverse);
+	float lz = GetLinearDepth(lodZ, lodProjectionInverse);
 	
 	for(int i = 0; i < 4; i++){
 		vec2 sampleOffset = aoSampleOffsets[i] / vec2(viewWidth, viewHeight);
 		vec2 depthOffset = aoDepthOffsets[i] / vec2(viewWidth, viewHeight);
-		float samplez = GetLinearDepth(texture2D(dhDepthTex0, texCoord + depthOffset).r, dhProjectionInverse);
+		float samplez = GetLinearDepth(texture2D(lodDepthTex0, texCoord + depthOffset).r, lodProjectionInverse);
 		float wg = max(1.0 - 4.0 * abs(lz - samplez), 0.00001);
 		ao += texture2D(colortex4, texCoord + sampleOffset).r * wg;
 		tw += wg;
@@ -258,16 +262,16 @@ void main() {
 	float z = texture2D(depthtex0, texCoord).r;
 	float rawZ = z;
 	
-	#ifdef DISTANT_HORIZONS
-	float dhZ = texture2D(dhDepthTex0, texCoord).r;
+	#ifdef LOD_RENDERER
+	float lodZ = texture2D(lodDepthTex0, texCoord).r;
 	#endif
 
 	float dither = Bayer8(gl_FragCoord.xy);
 
 	#if ALPHA_BLEND == 0
 	bool isSky = z == 1.0;
-	#ifdef DISTANT_HORIZONS
-	isSky = isSky && (dhZ == 1.0);
+	#ifdef LOD_RENDERER
+	isSky = isSky && (lodZ == 1.0);
 	#endif
 
 	if (isSky) color.rgb = max(color.rgb - dither / vec3(128.0), vec3(0.0));
@@ -364,17 +368,31 @@ void main() {
 		Fog(color.rgb, viewPos.xyz);
 	
 	#ifdef DISTANT_HORIZONS
-	} else if (dhZ < 1.0) {
+	} else if (lodZ < 1.0) {
 		z = 1.0 - 1e-5;
-		
-		vec4 dhScreenPos = vec4(texCoord, dhZ, 1.0);
-		viewPos = dhProjectionInverse * (dhScreenPos * 2.0 - 1.0);
+
+		vec4 lodScreenPos = vec4(texCoord, lodZ, 1.0);
+		viewPos = lodProjectionInverse * (lodScreenPos * 2.0 - 1.0);
 		viewPos /= viewPos.w;
 
 		#ifdef AO
-		color.rgb *= GetDHAmbientOcclusion(dhZ);
+		color.rgb *= GetLodAmbientOcclusion(lodZ);
 		#endif
-		
+
+		Fog(color.rgb, viewPos.xyz);
+	#endif
+	#ifdef VOXY
+	} else if (lodZ >1f) {
+		z = 1.0 - 1e-5;
+
+		vec4 lodScreenPos = vec4(texCoord, lodZ, 1.0);
+		viewPos = lodProjectionInverse * (lodScreenPos * 2.0 - 1.0);
+		viewPos /= viewPos.w;
+
+		#ifdef AO
+		color.rgb *= GetLodAmbientOcclusion(lodZ);
+		#endif
+
 		Fog(color.rgb, viewPos.xyz);
 	#endif
 	} else {
@@ -431,15 +449,15 @@ void main() {
 
 	float cloudMaxDistance = 2.0 * far;
 	#ifdef DISTANT_HORIZONS
-	cloudMaxDistance = max(cloudMaxDistance, dhFarPlane);
+	cloudMaxDistance = max(cloudMaxDistance, lodFarPlane);
 	#endif
 	float cloudViewLength = cloudMaxDistance;
 	
 	float cloudSampleZ = z;
 	#ifdef OUTLINE_OUTER
 	DepthOutline(cloudSampleZ, depthtex0);
-	#ifdef DISTANT_HORIZONS
-	DHDepthOutline(cloudSampleZ, dhDepthTex0);
+	#ifdef LOD_RENDERER
+	LodDepthOutline(cloudSampleZ, lodDepthTex0);
 	#endif
 	#endif
 
@@ -486,8 +504,8 @@ void main() {
 	#endif
 
 	float reflectionMask = float(z < 1.0);
-	#ifdef DISTANT_HORIZONS
-	reflectionMask = max(reflectionMask, float(dhZ < 1.0));
+	#ifdef LOD_RENDERER
+	reflectionMask = max(reflectionMask, float(lodZ < 1.0));
 	#endif
     
     /*DRAWBUFFERS:04 */
