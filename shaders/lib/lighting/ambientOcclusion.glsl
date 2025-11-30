@@ -143,12 +143,12 @@ float AmbientOcclusion(float dither) {
 }
 
 #ifdef LOD_RENDERER
-vec3 GetDHViewPos(vec3 screenPos) {
+vec3 GetLodViewPos(vec3 screenPos) {
 	vec4 viewPos = lodProjectionInverse * (vec4(screenPos, 1.0) * 2.0 - 1.0);
 	return viewPos.xyz / viewPos.w;
 }
 
-vec3 GetDHReconstructedNormal(float z, float linZ, vec3 viewPos) {
+vec3 GetLodReconstructedNormal(float z, float linZ, vec3 viewPos) {
 	float eZ = texture2D(lodDepthTex0, texCoord.xy + vec2(pw, 0.0)).r;
 	float wZ = texture2D(lodDepthTex0, texCoord.xy - vec2(pw, 0.0)).r;
 	float nZ = texture2D(lodDepthTex0, texCoord.xy + vec2(0.0, ph)).r;
@@ -163,11 +163,11 @@ vec3 GetDHReconstructedNormal(float z, float linZ, vec3 viewPos) {
 	bool useE = abs(eLinZ - linZ) < abs(wLinZ - linZ);
 	if (useE) {
 		vec3 hScreenPos = vec3(texCoord.xy + vec2(pw, 0.0), eZ);
-		vec3 hViewPos = GetDHViewPos(hScreenPos);
+		vec3 hViewPos = GetLodViewPos(hScreenPos);
 		hDeriv = hViewPos - viewPos;
 	} else {
 		vec3 hScreenPos = vec3(texCoord.xy - vec2(pw, 0.0), wZ);
-		vec3 hViewPos = GetDHViewPos(hScreenPos);
+		vec3 hViewPos = GetLodViewPos(hScreenPos);
 		hDeriv = viewPos - hViewPos;
 	}
 
@@ -175,11 +175,11 @@ vec3 GetDHReconstructedNormal(float z, float linZ, vec3 viewPos) {
 	bool useN = abs(nLinZ - linZ) < abs(sLinZ - linZ);
 	if (useN) {
 		vec3 vScreenPos = vec3(texCoord.xy + vec2(0.0, ph), nZ);
-		vec3 vViewPos = GetDHViewPos(vScreenPos);
+		vec3 vViewPos = GetLodViewPos(vScreenPos);
 		vDeriv = vViewPos - viewPos;
 	} else {
 		vec3 vScreenPos = vec3(texCoord.xy - vec2(0.0, ph), sZ);
-		vec3 vViewPos = GetDHViewPos(vScreenPos);
+		vec3 vViewPos = GetLodViewPos(vScreenPos);
 		vDeriv = viewPos - vViewPos;
 	}
 
@@ -188,7 +188,7 @@ vec3 GetDHReconstructedNormal(float z, float linZ, vec3 viewPos) {
 	return normal;
 }
 
-float DHAmbientOcclusion(float dither) {
+float LodAmbientOcclusion(float dither) {
 	float ao = 0.0;
 	float pointiness = 0.0;
 	
@@ -217,8 +217,8 @@ float DHAmbientOcclusion(float dither) {
 	vec2 baseOffset = GetDirection(dither);
 
 	#if AO_METHOD == 0
-	vec3 viewPos = GetDHViewPos(vec3(texCoord.xy, z));
-	vec3 normal = GetDHReconstructedNormal(z, linZ, viewPos);
+	vec3 viewPos = GetLodViewPos(vec3(texCoord.xy, z));
+	vec3 normal = GetLodReconstructedNormal(z, linZ, viewPos);
 
 	for (int i = 0; i < 4; i++) {
 		vec2 offset = baseOffset * currentStep * scale;
@@ -227,7 +227,7 @@ float DHAmbientOcclusion(float dither) {
 		for(int j = 0; j < 2; j++){
 			vec2 sampleCoord = texCoord + offset;
 			float sampleZ = texture2D(lodDepthTex0, sampleCoord).r;
-			vec3 sampleViewPos = GetDHViewPos(vec3(sampleCoord, sampleZ));
+			vec3 sampleViewPos = GetLodViewPos(vec3(sampleCoord, sampleZ));
 			vec3 difference = (sampleViewPos.xyz - viewPos.xyz) / (radius * currentStep * differenceScale);
 			float attenuation = clamp(1.0 + 0.5 / currentStep - 0.25 * length(difference), 0.0, 1.0);
 			

@@ -382,18 +382,7 @@ void main() {
 		Fog(color.rgb, viewPos.xyz);
 	#endif
 	#ifdef VOXY
-	} else if (lodZ >1f) {
-		z = 1.0 - 1e-5;
 
-		vec4 lodScreenPos = vec4(texCoord, lodZ, 1.0);
-		viewPos = lodProjectionInverse * (lodScreenPos * 2.0 - 1.0);
-		viewPos /= viewPos.w;
-
-		#ifdef AO
-		color.rgb *= GetLodAmbientOcclusion(lodZ);
-		#endif
-
-		Fog(color.rgb, viewPos.xyz);
 	#endif
 	} else {
 		#if defined OVERWORLD && defined SKY_DEFERRED
@@ -448,7 +437,7 @@ void main() {
 	float cloudDither = BayerCloud8(gl_FragCoord.xy);
 
 	float cloudMaxDistance = 2.0 * far;
-	#ifdef DISTANT_HORIZONS
+	#ifdef LOD_RENDERER
 	cloudMaxDistance = max(cloudMaxDistance, lodFarPlane);
 	#endif
 	float cloudViewLength = cloudMaxDistance;

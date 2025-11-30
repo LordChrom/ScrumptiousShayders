@@ -161,7 +161,7 @@ Please don't edit anything from Undefine section and onwards.
   #define SKY_GROUND 2 //[0 1 2]
 //#define SKY_UNDERGROUND
 //#define SHADER_END_SKY
-//#define SKY_DEFERRED
+  #define SKY_DEFERRED
 
 //#define SHADER_SUN_MOON
   #define SUN_MOON_GROUND
@@ -230,16 +230,16 @@ Please don't edit anything from Undefine section and onwards.
   #define BLOOM_CONTRAST 0 //[-4 -3 -2 -1 0 1 2 3 4]
 //#define DISABLE_BLOOM
 //#define DIRTY_LENS
-  #define LENS_FLARE
+//#define LENS_FLARE
   #define LENS_FLARE_STRENGTH 1.00 //[0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00]
   #define VIGNETTE
   #define VIGNETTE_STRENGTH 1.06 //[0.26 0.51 0.72 0.91 1.06 1.19 1.28 1.36 1.40 1.41]
   #define CHROMATIC_ABERRATION 0 //[0 1 2 3 4]
-  #define UNDERWATER_DISTORTION
+//#define UNDERWATER_DISTORTION
 
 //Anti-aliasing
-  #define FXAA
-  #define TAA
+//#define FXAA
+//#define TAA
 
   #define FXAA_SUBPIXEL 0.50 //[0.00 0.25 0.50 0.75 1.00]
   #define FXAA_EDGE_SENSITIVITY 1 //[0 1 2]

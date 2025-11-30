@@ -322,6 +322,10 @@ void main() {
 	#endif
 
 	// Notorious6Test(color);
+
+	#ifdef VOXY
+
+	#endif
 	
 	#ifdef COLOR_GRADING
 	ColorGrading(color);
@@ -403,7 +407,7 @@ void main() {
 	vec3 coloredLight = texture2DLod(colortex9, texCoord.xy, 2).rgb;
 	coloredLight *= 0.99;
 	#endif
-	
+
 	/* DRAWBUFFERS:12 */
 	gl_FragData[0] = vec4(color, 1.0);
 	gl_FragData[1] = vec4(temporalData, temporalColor);

@@ -64,7 +64,7 @@ void main() {
     #ifdef LOD_RENDERER
     float z = texture2D(depthtex0, texCoord.xy).r;
     if (z == 1.0) {
-        ao = DHAmbientOcclusion(blueNoise);
+        ao = LodAmbientOcclusion(blueNoise);
     }
     #endif
     
