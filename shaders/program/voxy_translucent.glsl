@@ -9,8 +9,17 @@ https://capttatsu.com
 
 //Fragment Shader///////////////////////////////////////////////////////////////////////////////////
 #ifdef FSH
+#if VOXY_TRANSLUCENTS < 3
+#undef ADVANCED_MATERIALS
+#undef REFLECTION_TRANSLUCENT
+#undef REFLECTION_SPECULAR
+#undef DIRECTIONAL_LIGHTMAP
 
-#if VOXY_TRANSLUCENTS > 0
+#define REFLECTIONS 0
+#define WATER_NORMALS_INTERNAL 0
+#endif
+
+#if VOXY_TRANSLUCENTS >= 2
 
 #define gbufferModelView            lodModelView
 #define gbufferModelViewInverse     lodModelViewInverse
@@ -157,32 +166,18 @@ struct VoxyFragmentParameters {
 #endif
 //Program//
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
-    uint blockId = parameters.customId;
-
-
-//
-//    float water  = float(blockId==20000);
-//    float glass = float(blockId<=20200 && 20100<=blockId);
-//    float portal  = 0; //voxy nether portals opaque, end portals dont render
-//    gl_FragData[0] = vec4(portal,0,portal,1);
-
-//    return;
-
-    vec4 color = parameters.tinting;
-//
-    if(color.a < 0.1) color.a = 1.0;
+    #if VOXY_TRANSLUCENTS == 0
+        discard;
+    #endif
 
     vec4 albedo = parameters.sampledColour;
-//    albedo.a=0.5;
-//    albedo.rgb*=albedo.a;
+    vec4 color = parameters.tinting;
     albedo*=vec4(color.rgb,1.0);
-//    albedo*=parameters.tinting;
-//    gl_FragData[0] = vec4(albedo.rgb,1);
-    //    gl_FragData[0] = vec4(albedo.a);
-//        gl_FragData[0] = vec4(albedo.a);return;
 
+    #if VOXY_TRANSLUCENTS >= 2
+    if(color.a < 0.1) color.a = 1.0;
 
-    #if VOXY_TRANSLUCENTS > 0
+    uint blockId = parameters.customId;
 
     vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
 
@@ -215,7 +210,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         }
         if((parameters.face&1)==0) normal=-normal;
 
-//        if(normal.z<0) discard;
 
         vec3 newNormal = normal;
 
@@ -281,11 +275,14 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //        }
 //        #endif
 
+
+        #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2 || defined ADVANCED_MATERIALS
         vec3 normalMap = vec3(0.0, 0.0, 1.0);
 
         mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
         tangent.y, binormal.y, normal.y,
         tangent.z, binormal.z, normal.z);
+        #endif
 
         #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2
 //        if (water > 0.5) {
@@ -347,7 +344,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         }
 
         #if WATER_FOG == 1
-        vec3 fogAlbedo = albedo.rgb;
+//        vec3 fogAlbedo = albedo.rgb;
         #endif
 
         vlAlbedo = mix(vec3(1.0), vlAlbedo, sqrt(albedo.a)) * (1.0 - pow(albedo.a, 64.0));
@@ -387,7 +384,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         float fresnel = pow(clamp(1.0 + dot(newNormal, normalize(viewPos)), 0.0, 1.0), 5.0);
 
         if (water > 0.5 || ((translucent + glass) > 0.5 && albedo.a < 0.95)) {
-            #if REFLECTION > 0 && VOXY_TRANSLUCENT_REFLECTIONS > 0
+            #if REFLECTION > 0 && VOXY_TRANSLUCENT_REFLECTIONS > 0 && VOXY_TRANSLUCENTS >= 3
             vec4 reflection = vec4(0.0);
             vec3 skyReflection = vec3(0.0);
             float reflectionMask = 0.0;

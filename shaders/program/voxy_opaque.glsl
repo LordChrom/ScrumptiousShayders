@@ -133,9 +133,10 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     vec4 albedo = parameters.sampledColour * vec4(color.rgb, 1.0);
 
+//    albedo*= uint2vec4RGBA(interData.z).yzwx;
+//albedo *= uint2vec4RGBA(interData.y);
 
-
-
+//    albedo = (albedo * uint2vec4RGBA(interData.y)) + vec4(0,0,0,float(interData.w&0xFFu)/255);
 
 
     if (albedo.a > 0.001) {

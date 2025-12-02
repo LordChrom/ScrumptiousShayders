@@ -1183,12 +1183,15 @@ option.WHITE_WORLD=White World
 option.WHITE_WORLD.comment=Replaces textures with flat white color.
 
 #Lods
-option.VOXY_TRANSLUCENT_REFLECTIONS=Voxy Translucent Reflections
-option.VOXY_TRANSLUCENT_REFLECTIONS.0=None
-option.VOXY_TRANSLUCENT_REFLECTIONS.1=Simple
-option.VOXY_TRANSLUCENT_REFLECTIONS.2=Full
+option.VOXY_TRANSLUCENT_REFLECTIONS=Voxy Reflections
+option.VOXY_TRANSLUCENT_REFLECTIONS.comment=Behavior of voxy translucent reflections Simple should be fine. Full may match better §e[*]§rRequires Voxy Translucents=Full
+value.VOXY_TRANSLUCENT_REFLECTIONS.0=None
+value.VOXY_TRANSLUCENT_REFLECTIONS.1=Simple
+value.VOXY_TRANSLUCENT_REFLECTIONS.2=Full
 
 option.VOXY_TRANSLUCENTS=Voxy Translucents
-option.VOXY_TRANSLUCENTS.0 = fast
-option.VOXY_TRANSLUCENTS.1 = partial
-option.VOXY_TRANSLUCENTS.2 = full
+option.VOXY_TRANSLUCENTS.comment=Overall behavior of LOD water and glass. Fast will look bad, Color will match the color. Full will match materials effects
+value.VOXY_TRANSLUCENTS.0 = None
+value.VOXY_TRANSLUCENTS.1 = Fast
+value.VOXY_TRANSLUCENTS.2 = Color
+value.VOXY_TRANSLUCENTS.3 = Full

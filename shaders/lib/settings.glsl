@@ -464,7 +464,7 @@ Please don't edit anything from Undefine section and onwards.
 //#define WHITE_WORLD
 
 //Voxy//
-#define VOXY_TRANSLUCENTS 2 //[0 1 2]
+#define VOXY_TRANSLUCENTS 2 //[0 1 2 3]
 #define VOXY_TRANSLUCENT_REFLECTIONS 1 //[0 1 2]
 
 
