@@ -10,7 +10,7 @@
     "version": 1,
     "excludeLodsFromVanillaDepth": false,
     "opaqueDrawBuffers": [0],
-    "translucentDrawBuffers": [0],
+    "translucentDrawBuffers": [0,1],
     "blending": {
         -1: "off",
         0: "ONE ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA"
@@ -28,7 +28,7 @@
 //#ifdef TAAU
 //    "renderScale": [TAAU_RENDER_SCALE, TAAU_RENDER_SCALE],
 //#endif
-//    "opaquePatchData": 1,
+
     "uniforms": [
         "bedrockLevel",
         "frameCounter",
@@ -36,27 +36,52 @@
         "moonPhase",
         "worldTime",
 
-        "blindFactor", "darknessFactor", "nightVision",
+        "blindFactor",
+        "darknessFactor",
+        "nightVision",
         "cloudHeight",
         "far",
         "frameTimeCounter",
         "rainStrength",
         "screenBrightness",
         "shadowFade",
-        "timeAngle", "timeBrightness",
-        "viewWidth", "viewHeight",
+        "timeAngle",
+        "timeBrightness",
+        "viewWidth",
+        "viewHeight",
 
 
         "cameraPosition",
+        "vxModelView", "vxModelViewInv",
         "vxProjInv",
         "gbufferModelView", "gbufferModelViewInverse",
         "shadowProjection",
         "shadowModelView",
 
+        #ifdef WEATHER_PERBIOME
+        "isDesert",
+        "isMesa",
+        "isCold",
+        "isSwamp",
+        "isMushroom",
+        "isSavanna",
+        "isJungle",
+        #endif
+
         "eyeBrightnessSmooth"
 
     ], 
-    "samplers": [
-        "noisetex"
-    ]
+    "samplers": {
+        #ifdef SHADOW
+            "shadowtex0": "sampler2DShadow",
+            #ifdef SHADOW_COLOR
+                "shadowtex1": "sampler2DShadow",
+                "shadowcolor0": "sampler2D",
+            #endif
+        #endif,
+
+        "gaux1":"sampler2D",
+        "depthtex1":"sampler2D",
+        "noisetex": "sampler2D"
+    }
 }

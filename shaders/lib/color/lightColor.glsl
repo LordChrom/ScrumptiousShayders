@@ -27,7 +27,10 @@ vec3 ambientNight    = vec3(AMBIENT_NR, AMBIENT_NG, AMBIENT_NB) * AMBIENT_NI * 0
 #endif
 
 #ifdef WEATHER_PERBIOME
+
+#ifndef VOXY_PATCH
 uniform float isDesert, isMesa, isCold, isSwamp, isMushroom, isSavanna, isJungle;
+#endif
 
 vec4 weatherRain     = vec4(vec3(WEATHER_RR, WEATHER_RG, WEATHER_RB) / 255.0, 1.0) * WEATHER_RI;
 vec4 weatherCold     = vec4(vec3(WEATHER_CR, WEATHER_CG, WEATHER_CB) / 255.0, 1.0) * WEATHER_CI;

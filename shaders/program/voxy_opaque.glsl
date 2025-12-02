@@ -1,7 +1,9 @@
-/* 
+/*
 BSL Shaders v10 Series by Capt Tatsu 
 https://capttatsu.com 
 */
+
+#define VOXY_PATCH
 
 //Settings//
 #include "/lib/settings.glsl"
@@ -9,62 +11,45 @@ https://capttatsu.com
 //Fragment Shader///////////////////////////////////////////////////////////////////////////////////
 #ifdef FSH
 
-#extension GL_ARB_shader_texture_lod : enable
-////Varyings//
-//varying float mat;
-
-varying vec2 texCoord, lmCoord;
-
-varying vec3 normal;
-varying vec3 sunVec, upVec, eastVec;
-
-varying vec4 color;
-
-//Uniforms//
-//uniform int bedrockLevel;
-//uniform int frameCounter;
-//uniform int isEyeInWater;
-//uniform int moonPhase;
-//uniform int worldTime;
-
-//uniform float blindFactor, darknessFactor, nightVision;
-//uniform float cloudHeight;
-//uniform float far;
-//uniform float frameTimeCounter;
-//uniform float rainStrength;
-//uniform float screenBrightness;
-//uniform float shadowFade;
-//uniform float timeAngle, timeBrightness;
-//uniform float viewWidth, viewHeight;
-////
-//uniform ivec2 eyeBrightnessSmooth;
-////
-//uniform vec3 cameraPosition;
-////
-//uniform mat4 lodProjectionInverse;
-//uniform mat4 gbufferModelView, gbufferModelViewInverse;
-//uniform mat4 shadowProjection;
-//uniform mat4 shadowModelView;
-//
-//uniform sampler2D noisetex;
 
 ////Common Variables//
+const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
+float ang1 = fract(timeAngle - 0.25);
+float ang = (ang1 + (cos(ang1 * 3.14159265358979) * -0.5 + 0.5 - ang1) / 3.0) * 6.28318530717959;
+vec3 sunVec = normalize((gbufferModelView * vec4(vec3(-sin(ang), cos(ang) * sunRotationData) * 2000.0, 1.0)).xyz);
+vec3 upVec = normalize(gbufferModelView[1].xyz);
+vec3 eastVec = normalize(gbufferModelView[0].xyz);
+
 float eBS = eyeBrightnessSmooth.y / 240.0;
 float sunVisibility  = clamp(dot( sunVec, upVec) * 10.0 + 0.5, 0.0, 1.0);
 float moonVisibility = clamp(dot(-sunVec, upVec) * 10.0 + 0.5, 0.0, 1.0);
+
+mat3 modelView3 = mat3(vxModelView);
+
+
+//const float daytimeSlope = 1.0/1000;
+//float dayPower = (clamp(daytimeSlope*worldTime,0,1)
+//+clamp((12000-worldTime)*daytimeSlope,-1,0));
+
+float dayPower = sunVisibility;
 
 #ifdef WORLD_TIME_ANIMATION
 float time = float(worldTime) * 0.05 * ANIMATION_SPEED;
 #else
 float time = frameTimeCounter * ANIMATION_SPEED;
 #endif
+//
+//#ifdef ADVANCED_MATERIALS
+//vec2 dcdx = dFdx(texCoord);
+//vec2 dcdy = dFdy(texCoord);
+//#endif
 
-#ifdef ADVANCED_MATERIALS
-vec2 dcdx = dFdx(texCoord);
-vec2 dcdy = dFdy(texCoord);
-#endif
+
 
 vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
+
+
+
 
 mat4 gbufferProjectionInverse = lodProjectionInverse;
 
@@ -123,63 +108,56 @@ layout(location = 0) out vec4 gbuffer_data_0;
 //    uint customId;//Same as iris's modelId
 //};
 
+
+//TODO: Nether needs work
+
 //Program//
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
-    vec4 albedo = vec4(1.0);
-    albedo = parameters.sampledColour;
-    albedo *= parameters.tinting.r;
-//    albedo.rgb *= lightCol;
+    uint blockId = parameters.customId;
 
-    float mat = parameters.customId;
-//    mat = 0;
-//
-    vec3 oldNormal = vec3(
-    uint((parameters.face >> 1) == 2),
-    uint((parameters.face >> 1) == 0),
-    uint((parameters.face >> 1) == 1)
-    );
-//    oldNormal*= (float(int(parameters.face) & 1) * 2.0 - 1.0);
-//    oldNormal = normalize(oldNormal);
-    oldNormal = vec3(0,1,0);
-//
-    vec3 newNormal = oldNormal;
+    #ifdef GLOWING_ORES
+    float emissive = float(blockId<=16100 && 15003<=blockId);
+    #else
+    float emissive = float(blockId<=15900 && 15003<=blockId);
+    #endif
+    float foliage  = float(blockId==10000);
+    float leaves   = float(blockId==10500);
+    float lava     = float(blockId==15302);
+    float candle = 0;
 
-//    if(parameters.face==3)
-//     albedo*=2;
+    float metalness       = 0.0;
+    float emission        = (emissive + candle + lava);
+    float subsurface      = 0.0;
+    float basicSubsurface = (foliage + candle) * 0.5 + leaves;
+    vec3 baseReflectance  = vec3(0.04);
 
-//    albedo *= float(worldTime & 0xff)/255.0;
+
+    vec4 color = parameters.tinting;
+
+    if(leaves>0){
+        color.rgb *= 1.225;
+    }
+
+    vec4 albedo = parameters.sampledColour * vec4(color.rgb, 1.0);
+
+
+
+
+
 
     if (albedo.a > 0.001) {
-        vec2 lightmap;
-//        lmCoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
+        //DEFINITELY move this normal stuff to fragment shaders once voxy lets us do that.
+        //or figure out a way to circumvent this transformation
+        //Also fix translucent if this is fixed
+        vec3 normal = modelView3*vec3(
+        uint((parameters.face >> 1) == 2),
+        uint((parameters.face >> 1) == 0),
+        uint((parameters.face >> 1) == 1)
+        );;
+        normal=normalize(normal);
+        vec3 newNormal = normal;
 
-        //        vec2 lightmap = (parameters.lightMap+lmCoord)*0.5;
-        lightmap = parameters.lightMap;
-//        lightmap = (gl_MultiTexCoord1).xy;
-//        lightmap = lmCoord;
-
-        lightmap = clamp(lightmap, vec2(0.0), vec2(1.0));
-//        lightmap.y=clamp(lmCoord.y,0.0,1.0);
-
-//        lightmap.x=float(quad.attributeData.x);
-
-        float foliage  = float(mat > 0.98 && mat < 1.02);
-        float leaves   = float(mat > 1.98 && mat < 2.02);
-        float emissive = float(mat > 2.98 && mat < 3.02);
-        float lava     = float(mat > 3.98 && mat < 4.02);
-        float cloud   = float(mat > 4.98 && mat < 5.02);
-
-        #if CLOUDS != 3
-        if (cloud > 0.5) {
-            discard;
-        }
-        #endif
-
-        float metalness       = 0.0;
-        float emission        = emissive + lava;
-        float subsurface      = 0.0;
-        float basicSubsurface = leaves * 0.5;
-        vec3 baseReflectance  = vec3(0.04);
+        vec2 lightmap = clamp(parameters.lightMap,vec2(0),vec2(1));
 
         vec3 hsv = RGB2HSV(albedo.rgb);
         emission *= GetHardcodedEmission(albedo.rgb, hsv);
@@ -203,7 +181,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         vec3 noisePos = (worldPos + cameraPosition) * 4.0;
         float albedoLuma = GetLuminance(albedo.rgb);
         float noiseAmount = (1.0 - albedoLuma * albedoLuma) * 0.05;
-        float albedoNoise = GetBlueNoise3D(noisePos, oldNormal);
+        float albedoNoise = GetBlueNoise3D(noisePos, normal);
         albedo.rgb = clamp(albedo.rgb + albedoNoise * noiseAmount, vec3(0.0), vec3(1.0));
 //         albedo.rgb = vec3(albedoNoise + 0.5);
 
@@ -214,18 +192,44 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
         albedo.rgb = pow(albedo.rgb, vec3(2.2));
 //
+        #ifdef EMISSIVE_RECOLOR
+        float ec = GetLuminance(albedo.rgb) * 1.7;
+        if (recolor > 0.5) {
+            albedo.rgb = blocklightCol * pow(ec, 1.5) / (BLOCKLIGHT_I * BLOCKLIGHT_I);
+            albedo.rgb /= 0.7 * albedo.rgb + 0.7;
+        }
+        if (lava > 0.5) {
+            albedo.rgb = pow(blocklightCol * ec / BLOCKLIGHT_I, vec3(2.0));
+            albedo.rgb /= 0.5 * albedo.rgb + 0.5;
+        }
+        #endif
+
+        #ifdef MCBL_SS
+        lightAlbedo = albedo.rgb + 0.00001;
+        if (lava > 0.5) {
+            lightAlbedo = pow(lightAlbedo, vec3(0.25));
+        }
+        lightAlbedo = sqrt(normalize(lightAlbedo) * emission);
+
+        #ifdef MULTICOLORED_BLOCKLIGHT
+        lightAlbedo *= GetMCBLLegacyMask(worldPos);
+        #endif
+        #endif
+
         #ifdef WHITE_WORLD
         albedo.rgb = vec3(0.35);
         #endif
 //
         vec3 outNormal = newNormal;
-//
+
         #if HALF_LAMBERT_INTERNAL == 0
         float NoL = clamp(dot(newNormal, lightVec), 0.0, 1.0);
         #else
         float NoL = clamp(dot(newNormal, lightVec) * 0.5 + 0.5, 0.0, 1.0);
         NoL *= NoL;
         #endif
+//        NoL = 0.3;
+
 
         float NoU = clamp(dot(newNormal, upVec), -1.0, 1.0);
         float NoE = clamp(dot(newNormal, eastVec), -1.0, 1.0);
@@ -235,172 +239,134 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         #ifndef NORMAL_PLANTS
         if (foliage > 0.5) vanillaDiffuse *= 1.8;
         #endif
+
         if (leaves > 0.5) {
-            float halfNoL = dot(newNormal, lightVec) * 0.5 + 0.5;
-            basicSubsurface *= halfNoL * step(length(albedo.rgb), 1.7);
+//            float halfNoL = dot(newNormal, lightVec) * 0.5 + 0.5;
+//            basicSubsurface *= halfNoL * step(length(albedo.rgb), 1.7);
+//            basicSubsurface*=2;
+//            albedo.rgb*=1.5;
         }
+
+
+
+
+        float parallaxShadow=1.0;
+
+
+//        #ifdef ADVANCED_MATERIALS
+//        vec3 rawAlbedo = albedo.rgb * 0.999 + 0.001;
+//        albedo.rgb *= ao * ao;
+//
+//        #ifdef REFLECTION_SPECULAR
+//        albedo.rgb *= 1.0 - metalness * smoothness;
+//        #endif
+//
+//        float doParallax = 0.0;
+//        #ifdef SELF_SHADOW
+//        float parallaxNoL = dot(outNormal, lightVec);
+//        #ifdef OVERWORLD
+//        doParallax = float(lightmap.y > 0.0 && parallaxNoL > 0.0);
+//        #endif
+//        #ifdef END
+//        doParallax = float(parallaxNoL > 0.0);
+//        #endif
+//
+//        if (doParallax > 0.5 && skipParallax < 0.5) {
+//            parallaxShadow = GetParallaxShadow(surfaceDepth, parallaxFade, newCoord, lightVec,
+//            tbnMatrix);
+//        }
+//        #endif
+//
+//        #ifdef DIRECTIONAL_LIGHTMAP
+//        mat3 lightmapTBN = GetLightmapTBN(viewPos);
+//        lightmap.x = DirectionalLightmap(lightmap.x, lmCoord.x, outNormal, lightmapTBN);
+//        lightmap.y = DirectionalLightmap(lightmap.y, lmCoord.y, outNormal, lightmapTBN);
+//        #endif
+//        #endif
+
+
+
+
+
 
         vec3 shadow = vec3(0.0);
-        if (cloud < 0.5) {
-            NoL = 0;
-            GetLighting(albedo.rgb, shadow, viewPos, worldPos, normal, lightmap, 1.0, NoL,
-            vanillaDiffuse, 1.0, emission, subsurface, basicSubsurface);
-        } else {
-            #ifdef OVERWORLD
-            albedo.rgb *= lightCol * vanillaDiffuse * CLOUD_BRIGHTNESS;
-            albedo.rgb *= mix(0.4 - 0.25 * rainStrength, 0.5 - 0.425 * rainStrength, sunVisibility);
+//        lightmap=vec2(0.8,0.8);
+//        emission=0.2;
+//        albedo.a=1;
+//        lightmap.y=0;
+//        lightmap.y=1;
 
-            vec3 sky = GetSkyColor(viewPos, false);
-            float cloudAlpha = 0.125;
+        GetLighting(albedo.rgb, shadow, viewPos, worldPos, normal, lightmap, color.a, NoL,
+            vanillaDiffuse, parallaxShadow, emission, subsurface, basicSubsurface);
+//        lightmap.y=0.5;
 
-            #if FOG_VANILLA_CLOUD > 0
-            #if FOG_VANILLA_CLOUD == 1
-            float vanillaFogEnd = 4.0;
-            #elif FOG_VANILLA_CLOUD == 2
-            float vanillaFogEnd = 2.0;
-            #else
-            float vanillaFogEnd = 1.0;
-            #endif
+//        #ifdef ADVANCED_MATERIALS
+//        float puddles = 0.0;
+//
+//        skyOcclusion = lightmap.y;
+//
+//        baseReflectance = mix(vec3(f0), rawAlbedo, metalness);
+//        float fresnel = pow(clamp(1.0 + dot(outNormal, normalize(viewPos.xyz)), 0.0, 1.0), 5.0);
+//
+//        fresnel3 = mix(baseReflectance, vec3(1.0), fresnel);
+//        #if MATERIAL_FORMAT == 1
+//        if (f0 >= 0.9 && f0 < 1.0) {
+//            baseReflectance = GetMetalCol(f0);
+//            fresnel3 = ComplexFresnel(pow(fresnel, 0.2), f0);
+//            #ifdef ALBEDO_METAL
+//            fresnel3 *= rawAlbedo;
+//            #endif
+//        }
+//        #endif
+//
+//        float aoSquared = ao * ao;
+//        shadow *= aoSquared; fresnel3 *= aoSquared;
+//        albedo.rgb = albedo.rgb * (1.0 - fresnel3 * smoothness * smoothness * (1.0 - metalness));
+//        #endif
 
-            float worldDistance = length(worldPos.xz) / 4096.0;
-            float vanillaFog = 1.0 - smoothstep(0.5, vanillaFogEnd, worldDistance);
-            cloudAlpha *= vanillaFog;
-            #endif
-
-            albedo.rgb = mix(sky, albedo.rgb, cloudAlpha);
-            #endif
-        }
         #if ALPHA_BLEND == 0
         albedo.rgb = sqrt(max(albedo.rgb, vec3(0.0)));
         #endif
+//        gl_FragData[0] = vec4(vec3(lightmap.x),1);
+        float debug;
+        //		debug = albedo.a;
+        debug = shadow.r*0.2;
+//        debug=newNormal.y;
+//        debug = NoL;
+//        debug=upVec.y;
+
+
+        gl_FragData[0] = vec4(vec3(clamp(debug,0,1)),1);
+
     } else {
         albedo = vec4(0.0);
+        gl_FragData[0] = vec4(0.01,0,0,0.1);
+
     }
 
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = albedo;
 
-}
 
-
-#endif
-
-//Vertex Shader/////////////////////////////////////////////////////////////////////////////////////
-#ifdef VSH
+//    #ifdef MCBL_SS
+//    /* DRAWBUFFERS:08 */
+//    gl_FragData[1] = vec4(lightAlbedo, 1.0);
 //
-////Varyings//
-varying float mat;
-////
-varying vec2 texCoord, lmCoord;
-////
-varying vec3 oldNormal;
-varying vec3 sunVec, upVec, eastVec;
-////
-varying vec4 color;
-////
-//////Uniforms//
-uniform int heightLimit;
-uniform int worldTime;
-////
-uniform float frameTimeCounter;
-uniform float timeAngle;
-////
-uniform vec3 cameraPosition;
-////
-uniform mat4 lodProjection;
-uniform mat4 gbufferModelView, gbufferModelViewInverse;
-
-////
-#ifdef TAA
-uniform int frameCounter;
-
-uniform float viewWidth, viewHeight;
-#endif
-//
-////Attributes//
-attribute vec4 mc_Entity;
-attribute vec4 mc_midTexCoord;
-
-//////Common Variables//
-#ifdef WORLD_TIME_ANIMATION
-float time = float(worldTime) * 0.05 * ANIMATION_SPEED;
-#else
-float time = frameTimeCounter * ANIMATION_SPEED;
-#endif
-//
-//////Includes//
-#include "/lib/vertex/waving.glsl"
-////
-#ifdef TAA
-#include "/lib/util/jitter.glsl"
-#endif
-////
-#ifdef WORLD_CURVATURE
-#include "/lib/vertex/worldCurvature.glsl"
-#endif
-////
-//////Program//
-vec2 taaShift() {
-////void main() {
-    texCoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
-
-    lmCoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
-    lmCoord = clamp((lmCoord - 0.03125) * 1.06667, vec2(0.0), vec2(0.9333, 1.0));
-//
-//
-    normal = normalize(gl_NormalMatrix * gl_Normal);
-//
-    color = gl_Color;
-//
-    mat = 0.0;
-//
-//    #ifdef DISTANT_HORIZONS
-//    int blockID = dhMaterialId;
-//
-//
-//    if (blockID == DH_BLOCK_LEAVES){
-//        mat = 2.0;
-//        color.rgb *= 1.3;
-//    }
-//    if (blockID == DH_BLOCK_ILLUMINATED)
-//    mat = 3.0;
-//    if (blockID == DH_BLOCK_LAVA) {
-//        mat = 4.0;
-//        lmCoord.x += 0.0667;
-//    }
+//    #if defined ADVANCED_MATERIALS && defined REFLECTION_SPECULAR
+//    /* DRAWBUFFERS:08367 */
+//    gl_FragData[2] = vec4(smoothness, skyOcclusion, 0.0, 1.0);
+//    gl_FragData[3] = vec4(EncodeNormal(newNormal), float(gl_FragCoord.z < 1.0), 1.0);
+//    gl_FragData[4] = vec4(fresnel3, 1.0);
 //    #endif
-//
-    const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
-    float ang = fract(sunAngle - 0.25);
-    ang = (ang + (cos(ang * 3.14159265358979) * -0.5 + 0.5 - ang) / 3.0) * 6.28318530717959;
-    sunVec = normalize((gbufferModelView * vec4(vec3(-sin(ang), cos(ang) * sunRotationData) * 2000.0, 1.0)).xyz);
-
-//    sunVec = vec3(0,-100,1);
-
-    upVec = normalize(gbufferModelView[1].xyz);
-    eastVec = normalize(gbufferModelView[0].xyz);
-
-    vec4 position = gbufferModelViewInverse * gl_ModelViewMatrix * gl_Vertex;
-
-    float worldY = position.y + cameraPosition.y;
-
-    if (worldY > (heightLimit + 192) && worldY < (heightLimit + 240)) {
-        mat = 5.0;
-    }
-
-    #ifdef WORLD_CURVATURE
-    if (mat != 5.0) {
-        position.y -= WorldCurvature(position.xz);
-    }
-    #endif
-
-    gl_Position = lodProjection * gbufferModelView * position;
-
-    #ifdef TAA
-    return TAAJitter(gl_Position.xy, gl_Position.w);
-    #else
-    return vec2(0.0);
-    #endif
+//    #else
+//    #if defined ADVANCED_MATERIALS && defined REFLECTION_SPECULAR
+//    /* DRAWBUFFERS:0367 */
+//    gl_FragData[1] = vec4(smoothness, skyOcclusion, 0.0, 1.0);
+//    gl_FragData[2] = vec4(EncodeNormal(newNormal), float(gl_FragCoord.z < 1.0), 1.0);
+//    gl_FragData[3] = vec4(fresnel3, 1.0);
+//    #endif
+//    #endif
 }
+
 
 #endif

@@ -1,10 +1,11 @@
 #if defined OVERWORLD || defined END
-#include "/lib/lighting/shadows.glsl"
+#include "/lib/lighting/lodShadows.glsl"
 #endif
 
 void GetLighting(inout vec3 albedo, out vec3 shadow, vec3 viewPos, vec3 worldPos, vec3 normal,
 vec2 lightmap, float smoothLighting, float NoL, float vanillaDiffuse,
 float parallaxShadow, float emission, float subsurface, float basicSubsurface) {
+
     #if EMISSIVE == 0 || (!defined ADVANCED_MATERIALS && EMISSIVE == 1)
     emission = 0.0;
     #endif
@@ -20,7 +21,17 @@ float parallaxShadow, float emission, float subsurface, float basicSubsurface) {
     float skylightSqr = lightmap.y * lightmap.y;
 
     #if defined OVERWORLD || defined END
+//    #ifdef SHADOW
+//    if (NoL > 0.0 || basicSubsurface > 0.0) {
+//        shadow = GetShadow(worldPos, normal, NoL, basicSubsurface, lightmap.y);
+//    }
+//    shadow *= parallaxShadow;
+//    shadow = max(shadow, vec3(0.0));
+//    NoL = clamp(NoL * 1.01 - 0.01, 0.0, 1.0);
+//    #else
     shadow = GetShadow(worldPos, normal, NoL, basicSubsurface, lightmap.y);
+//    #endif
+
 
     #ifdef SHADOW_CLOUD
     float cloudShadow = GetCloudShadow(worldPos);
@@ -35,6 +46,9 @@ float parallaxShadow, float emission, float subsurface, float basicSubsurface) {
         NoL = mix(NoL, 1.0, scattering);
     }
 
+    #ifdef SHADOW
+    vec3 fullShadow = max(shadow * NoL, vec3(0.0));
+    #else
     vec3 fullShadow = vec3(shadow);
     #ifdef OVERWORLD
     float timeBrightnessAbs = abs(sin(timeAngle * 6.28318530718));
@@ -43,25 +57,29 @@ float parallaxShadow, float emission, float subsurface, float basicSubsurface) {
     #else
     fullShadow *= 0.75;
     #endif
+    #endif
 
-//    #ifdef ADVANCED_MATERIALS
-//    if (subsurface > 0.0){
-//        vec3 subsurfaceShadow = GetSubsurfaceShadow(worldPos, subsurface, lightmap.y);
-//
-//        float VoL = clamp(dot(normalize(viewPos.xyz), lightVec) * 0.5 + 0.5, 0.0, 1.0);
-//        float scattering = pow(VoL, 16.0) * (1.0 - rainStrength) * shadowFade;
-//
-//        vec3 subsurfaceColor = normalize(albedo + 0.00001) * 1.2;
-//        subsurfaceColor = mix(subsurfaceColor, vec3(1.0), pow(subsurfaceShadow, vec3(4.0)));
-//        subsurfaceColor = mix(subsurfaceColor, vec3(4.0), scattering) * sqrt(subsurface);
-//
-//        fullShadow = mix(subsurfaceColor * subsurfaceShadow, vec3(1.0), fullShadow);
-//    }
-//    #endif
+    #ifdef ADVANCED_MATERIALS
+    if (subsurface > 0.0){
+        vec3 subsurfaceShadow = GetSubsurfaceShadow(worldPos, subsurface, lightmap.y);
+
+        float VoL = clamp(dot(normalize(viewPos.xyz), lightVec) * 0.5 + 0.5, 0.0, 1.0);
+        float scattering = pow(VoL, 16.0) * (1.0 - rainStrength) * shadowFade;
+
+        vec3 subsurfaceColor = normalize(albedo + 0.00001) * 1.2;
+        subsurfaceColor = mix(subsurfaceColor, vec3(1.0), pow(subsurfaceShadow, vec3(4.0)));
+        subsurfaceColor = mix(subsurfaceColor, vec3(4.0), scattering) * sqrt(subsurface);
+
+        fullShadow = mix(subsurfaceColor * subsurfaceShadow, vec3(1.0), fullShadow);
+    }
+    #endif
 
     #ifdef OVERWORLD
     float shadowMult = (1.0 - 0.95 * rainStrength) * shadowFade;
+//    shadowMult=0.5;
     vec3 sceneLighting = mix(ambientCol * lightmap.y, lightCol, fullShadow * shadowMult);
+//    sceneLighting = vec3(0.5);
+
     sceneLighting *= skylightSqr * (1.0 + scattering * shadow);
 
     #ifdef CLASSIC_EXPOSURE
@@ -88,9 +106,11 @@ float parallaxShadow, float emission, float subsurface, float basicSubsurface) {
     #endif
 
     vec3 albedoNormalized = normalize(albedo.rgb + 0.00001);
+//    emission=0.1;
     emission = pow(emission, max(EMISSIVE_CURVE, 1.0));
+//    emission=0.1;
     vec3 emissiveLighting = mix(albedoNormalized, vec3(1.0), emission * 0.5);
-    emissiveLighting *= emission * EMISSIVE_INTENSITY;
+    emissiveLighting *= emission*EMISSIVE_INTENSITY;
 
     float lightFlatten = clamp(1.0 - pow(1.0 - emission, 128.0), 0.0, 1.0);
     vanillaDiffuse = mix(vanillaDiffuse, 1.0, lightFlatten);
@@ -103,10 +123,13 @@ float parallaxShadow, float emission, float subsurface, float basicSubsurface) {
     albedo.rgb /= 1.0 + albedoBrightness * 0.25 * (1.0 - lightFlatten);
     #endif
 
-    //albedo = vec3(0.5);
+//    emissiveLighting=vec3(0.5);
+//    blockLighting=vec3(0.5);
+
+
     albedo *= max(sceneLighting + blockLighting + emissiveLighting + nightVisionLighting + minLighting, vec3(0.0));
     albedo *= vanillaDiffuse * smoothLighting * smoothLighting;
-    // albedo = blocklightCol * 0.25;
+//     albedo = blocklightCol * 0.25;
 
     #ifdef DESATURATION
     #ifdef OVERWORLD
