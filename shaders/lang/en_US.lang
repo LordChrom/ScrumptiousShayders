@@ -1181,3 +1181,14 @@ option.WORLD_CURVATURE_SIZE.comment=Adjusts world curvature size. Negative value
 
 option.WHITE_WORLD=White World
 option.WHITE_WORLD.comment=Replaces textures with flat white color.
+
+#Lods
+option.VOXY_TRANSLUCENT_REFLECTIONS=Voxy Translucent Reflections
+option.VOXY_TRANSLUCENT_REFLECTIONS.0=None
+option.VOXY_TRANSLUCENT_REFLECTIONS.1=Simple
+option.VOXY_TRANSLUCENT_REFLECTIONS.2=Full
+
+option.VOXY_TRANSLUCENTS=Voxy Translucents
+option.VOXY_TRANSLUCENTS.0 = fast
+option.VOXY_TRANSLUCENTS.1 = partial
+option.VOXY_TRANSLUCENTS.2 = full

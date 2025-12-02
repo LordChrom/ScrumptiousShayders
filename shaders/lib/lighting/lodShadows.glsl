@@ -22,7 +22,7 @@ float GetCloudShadow(vec3 worldPos) {
     vec3 coveragePos = worldPos;
     worldPos += cameraPosition;
 
-    vec3 worldLightVec = (gbufferModelViewInverse * vec4(lightVec, 0.0)).xyz;
+    vec3 worldLightVec = (lodModelViewInverse * vec4(lightVec, 0.0)).xyz;
 
     #if CLOUD_HEIGHT == -1
 	#ifdef IS_IRIS

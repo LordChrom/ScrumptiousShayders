@@ -11,25 +11,22 @@ https://capttatsu.com
 //Fragment Shader///////////////////////////////////////////////////////////////////////////////////
 #ifdef FSH
 
+#define gbufferModelView            lodModelView
+#define gbufferModelViewInverse     lodModelViewInverse
+#define gbufferProjection           lodProjection
+#define gbufferProjectionInverse    lodProjectionInverse
 
 ////Common Variables//
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
 float ang = (ang1 + (cos(ang1 * 3.14159265358979) * -0.5 + 0.5 - ang1) / 3.0) * 6.28318530717959;
-vec3 sunVec = normalize((gbufferModelView * vec4(vec3(-sin(ang), cos(ang) * sunRotationData) * 2000.0, 1.0)).xyz);
-vec3 upVec = normalize(gbufferModelView[1].xyz);
-vec3 eastVec = normalize(gbufferModelView[0].xyz);
+vec3 sunVec = normalize((vxModelView * vec4(vec3(-sin(ang), cos(ang) * sunRotationData) * 2000.0, 1.0)).xyz);
+vec3 upVec = normalize(vxModelView[1].xyz);
+vec3 eastVec = normalize(vxModelView[0].xyz);
 
 float eBS = eyeBrightnessSmooth.y / 240.0;
 float sunVisibility  = clamp(dot( sunVec, upVec) * 10.0 + 0.5, 0.0, 1.0);
 float moonVisibility = clamp(dot(-sunVec, upVec) * 10.0 + 0.5, 0.0, 1.0);
-
-mat3 modelView3 = mat3(vxModelView);
-
-
-//const float daytimeSlope = 1.0/1000;
-//float dayPower = (clamp(daytimeSlope*worldTime,0,1)
-//+clamp((12000-worldTime)*daytimeSlope,-1,0));
 
 float dayPower = sunVisibility;
 
@@ -49,10 +46,6 @@ float time = frameTimeCounter * ANIMATION_SPEED;
 vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
 
 
-
-
-mat4 gbufferProjectionInverse = lodProjectionInverse;
-
 ////Common Functions//
 float GetLuminance(vec3 color) {
     return dot(color,vec3(0.299, 0.587, 0.114));
@@ -61,7 +54,7 @@ float GetLuminance(vec3 color) {
 float GetBlueNoise3D(vec3 pos, vec3 normal) {
     pos = (floor(pos + 0.01) + 0.5) / 512.0;
 
-    vec3 worldNormal = (gbufferModelViewInverse * vec4(normal, 0.0)).xyz;
+    vec3 worldNormal = (vxModelViewInv * vec4(normal, 0.0)).xyz;
     vec3 noise3D = vec3(
     texture2D(noisetex, pos.yz).b,
     texture2D(noisetex, pos.xz).b,
@@ -149,12 +142,31 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         //DEFINITELY move this normal stuff to fragment shaders once voxy lets us do that.
         //or figure out a way to circumvent this transformation
         //Also fix translucent if this is fixed
-        vec3 normal = modelView3*vec3(
-        uint((parameters.face >> 1) == 2),
-        uint((parameters.face >> 1) == 0),
-        uint((parameters.face >> 1) == 1)
-        );;
-        normal=normalize(normal);
+        vec3 normal;
+//        normal = mat3(vxModelView)*vec3(
+//        uint((parameters.face >> 1) == 2),
+//        uint((parameters.face >> 1) == 0),
+//        uint((parameters.face >> 1) == 1)
+//        );;
+//
+//        normal = vxModelView[((uint(parameters.face)>>1u)+1u)%3u].xyz;
+        //
+        switch(uint(parameters.face)>>1u){
+            case 0u:
+            normal = vxModelView[1].xyz;
+            break;
+            case 1u:
+            normal = vxModelView[2].xyz;
+            break;
+            case 2u:
+            normal = vxModelView[0].xyz;
+            break;
+        }
+        if((parameters.face&1)==0) normal=-normal;
+
+        //this can be done, but it actually reduces perf notably
+//        if(normal.z<0) discard;
+
         vec3 newNormal = normal;
 
         vec2 lightmap = clamp(parameters.lightMap,vec2(0),vec2(1));
@@ -168,15 +180,20 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         #else
         vec3 viewPos = ToNDC(screenPos);
         #endif
-        vec3 worldPos = ToWorld(viewPos);
+        vec3 worldPos = mat3(vxModelViewInv) * viewPos + vxModelViewInv[3].xyz;
+
+//        vec3 worldPos = ToWorld(viewPos);
 
         float dither = Bayer8(gl_FragCoord.xy);
 
-        float viewLength = length(viewPos);
-        float minDist = (dither - DH_OVERDRAW) * 16.0 + far;
-        if (viewLength < minDist) {
-            discard;
-        }
+
+        //this doesnt save perf in voxy because it already prevents overdraw effectively
+        //        TODO test with lots of LOD terrain
+//        float viewLength = length(viewPos);
+//        float minDist = (dither - DH_OVERDRAW) * 16.0 + far;
+//        if (viewLength < minDist) {
+//            discard;
+//        }
 
         vec3 noisePos = (worldPos + cameraPosition) * 4.0;
         float albedoLuma = GetLuminance(albedo.rgb);

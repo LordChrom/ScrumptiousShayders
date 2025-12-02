@@ -463,6 +463,11 @@ Please don't edit anything from Undefine section and onwards.
   #define WORLD_CURVATURE_SIZE 256 //[-256 -512 -1024 -2048 -4096 -8192 -16384 16384 8192 4096 2048 1024 512 256 128 64 32 16]
 //#define WHITE_WORLD
 
+//Voxy//
+#define VOXY_TRANSLUCENTS 2 //[0 1 2]
+#define VOXY_TRANSLUCENT_REFLECTIONS 1 //[0 1 2]
+
+
 //Use style options//
   #if SUN_PATH_ROTATION == -1
   #if STYLE == 0

@@ -34,4 +34,7 @@ uniform int vxRenderDistance;
 #define lodDepthTex0 vxDepthTexTrans
 #define lodDepthTex1 vxDepthTexOpaque
 
+#define lodModelView vxModelView
+#define lodModelViewInverse vxModelViewInv
+
 #endif

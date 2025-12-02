@@ -10,11 +10,12 @@
     "version": 1,
     "excludeLodsFromVanillaDepth": false,
     "opaqueDrawBuffers": [0],
-    "translucentDrawBuffers": [0,1],
+    "translucentDrawBuffers": [0],
     "blending": {
         -1: "off",
-        0: "ONE ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA"
-    }, 
+   //     0: "ONE ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA"
+       0: "SRC_ALPHA ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA"
+    },
 //#ifdef TAA
 //    "taaOffset": "{
 //    #ifdef TAAU
@@ -23,10 +24,6 @@
 //        return taa_offset * 0.66;
 //    #endif
 //    }",
-//    "useViewportDims": true,
-//#endif
-//#ifdef TAAU
-//    "renderScale": [TAAU_RENDER_SCALE, TAAU_RENDER_SCALE],
 //#endif
 
     "uniforms": [
@@ -35,6 +32,8 @@
         "isEyeInWater",
         "moonPhase",
         "worldTime",
+
+        "skyColor","fogColor",
 
         "blindFactor",
         "darknessFactor",
@@ -53,8 +52,11 @@
 
         "cameraPosition",
         "vxModelView", "vxModelViewInv",
-        "vxProjInv",
-        "gbufferModelView", "gbufferModelViewInverse",
+        "vxProj", "vxProjInv",
+    //    "gbufferModelView",
+    //    "gbufferModelViewInverse",
+    //    "gbufferProjection",
+    //    "gbufferProjectionInverse",
         "shadowProjection",
         "shadowModelView",
 
@@ -70,7 +72,7 @@
 
         "eyeBrightnessSmooth"
 
-    ], 
+    ],
     "samplers": {
         #ifdef SHADOW
             "shadowtex0": "sampler2DShadow",
@@ -80,7 +82,12 @@
             #endif
         #endif,
 
+        "vxDepthTexOpaque":"sampler2D",
+        "vxDepthTexTrans":"sampler2D",
+        #if CLOUDS == 2
         "gaux1":"sampler2D",
+        "gaux2":"sampler2D",
+        #endif
         "depthtex1":"sampler2D",
         "noisetex": "sampler2D"
     }
