@@ -1,8 +1,10 @@
 //Jitter offset from Chocapic13
+#ifndef VOXY_PATCH
 uniform float framemod8;
 uniform float framemod2;
+#endif
 
-vec2 jitterOffsets8[8] = vec2[8](
+const vec2 jitterOffsets8[8] = vec2[8](
 							vec2( 0.125,-0.375),
 							vec2(-0.125, 0.375),
 							vec2( 0.625, 0.125),
@@ -12,7 +14,7 @@ vec2 jitterOffsets8[8] = vec2[8](
 							vec2( 0.375,-0.875),
 							vec2( 0.875, 0.875)
 						);
-vec2 jitterOffsets2[2] = vec2[2](
+const vec2 jitterOffsets2[2] = vec2[2](
 							vec2( 1.0,  0.0),
 							vec2( 0.0,  1.0)
 						);
