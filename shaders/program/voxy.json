@@ -69,12 +69,8 @@
 
 
         "cameraPosition",
-        "vxModelView", "vxModelViewInv",
-        "vxProj", "vxProjInv",
-    //    "gbufferModelView",
-    //    "gbufferModelViewInverse",
-    //    "gbufferProjection",
-    //    "gbufferProjectionInverse",
+        "vxModelView", "vxModelViewInv","vxModelViewPrev",
+        "vxProj", "vxProjInv", "vxViewProjPrev",
         "shadowProjection",
         "shadowModelView",
 
@@ -96,6 +92,14 @@
         #endif
         #endif
 
+        #ifdef MCBL_SS
+        "relativeEyePosition",
+        "heldItemId",
+        "heldItemId2",
+        "previousCameraPosition",
+        "gbufferPreviousModelView",
+        #endif
+
         "eyeBrightnessSmooth"
 
     ],
@@ -107,6 +111,10 @@
                 "shadowcolor0": "sampler2D",
             #endif
         #endif,
+
+	    #ifdef MCBL_SS
+        "colortex9":"sampler2D",
+        #endif
 
         "vxDepthTexOpaque":"sampler2D",
         "vxDepthTexTrans":"sampler2D",

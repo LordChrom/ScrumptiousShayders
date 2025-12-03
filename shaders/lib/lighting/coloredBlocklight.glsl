@@ -89,7 +89,8 @@ vec3 ApplyMultiColoredBlocklight(vec3 blocklightCol, vec3 screenPos, vec3 worldP
 		screenPos.xy = Reprojection(screenPos);
 	}
 
-	vec3 ssmcblCol = texture2DLod(colortex9, screenPos.xy, 2).rgb;
+	//this might need an "ifdef VXOY_PATCH else use texture2DLod otherwise, but texture2DLod is deprecated anyways
+	vec3 ssmcblCol = texture2D(colortex9, screenPos.xy, 2).rgb;
 	float ssmcblFactor = min((ssmcblCol.r + ssmcblCol.g + ssmcblCol.b) * 2048.0, 1.0);
 
 	#if MCBL_SS_MODE == 0 && defined MULTICOLORED_BLOCKLIGHT

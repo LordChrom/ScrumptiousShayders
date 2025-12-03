@@ -25,6 +25,8 @@ https://capttatsu.com
 #define gbufferModelViewInverse     lodModelViewInverse
 #define gbufferProjection           lodProjection
 #define gbufferProjectionInverse    lodProjectionInverse
+#define gbufferPreviousModelView    lodPreviousModelView
+#define gbufferPreviousProjection   lodPreviousProjection
 
 //Varyings//
 //varying vec3 binormal, tangent;

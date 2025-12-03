@@ -10,11 +10,14 @@ https://capttatsu.com
 //
 //Fragment Shader///////////////////////////////////////////////////////////////////////////////////
 #ifdef FSH
+#undef MULTICOLORED_BLOCKLIGHT
 
 #define gbufferModelView            lodModelView
 #define gbufferModelViewInverse     lodModelViewInverse
 #define gbufferProjection           lodProjection
 #define gbufferProjectionInverse    lodProjectionInverse
+#define gbufferPreviousModelView    lodPreviousModelView
+#define gbufferPreviousProjection   lodPreviousProjection
 
 ////Common Variables//
 layout(location = 0) out vec4 gbuffer_data;
@@ -86,6 +89,11 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 
 //#include "/lib/lighting/forwardLighting.glsl"
 #include "/lib/lighting/lodLighting.glsl"
+
+#ifdef MCBL_SS
+#include "/lib/util/voxelMapHelper.glsl"
+#include "/lib/lighting/coloredBlocklight.glsl"
+#endif
 
 #ifdef TAA
 #include "/lib/util/jitter.glsl"
@@ -224,7 +232,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         #endif
 
         #ifdef MCBL_SS
-        lightAlbedo = albedo.rgb + 0.00001;
+        vec3 lightAlbedo = albedo.rgb + 0.00001;
         if (lava > 0.5) {
             lightAlbedo = pow(lightAlbedo, vec3(0.25));
         }

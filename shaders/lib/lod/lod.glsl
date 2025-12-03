@@ -37,4 +37,7 @@ uniform int vxRenderDistance;
 #define lodModelView vxModelView
 #define lodModelViewInverse vxModelViewInv
 
+#define lodPreviousModelView vxModelViewPrev
+#define lodPreviousProjection vxViewProjPrev
+
 #endif
