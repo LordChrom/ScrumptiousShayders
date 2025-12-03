@@ -17,6 +17,8 @@ https://capttatsu.com
 #define gbufferProjectionInverse    lodProjectionInverse
 
 ////Common Variables//
+layout(location = 0) out vec4 gbuffer_data;
+
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
 float ang = (ang1 + (cos(ang1 * 3.14159265358979) * -0.5 + 0.5 - ang1) / 3.0) * 6.28318530717959;
@@ -88,7 +90,6 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 #ifdef TAA
 #include "/lib/util/jitter.glsl"
 #endif
-layout(location = 0) out vec4 gbuffer_data_0;
 
 //struct VoxyFragmentParameters {
 //    vec4 sampledColour;
@@ -346,24 +347,24 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         albedo.rgb = sqrt(max(albedo.rgb, vec3(0.0)));
         #endif
 //        gl_FragData[0] = vec4(vec3(lightmap.x),1);
-        float debug;
+//        float debug;
         //		debug = albedo.a;
-        debug = shadow.r*0.2;
+//        debug = shadow.r*0.2;
 //        debug=newNormal.y;
 //        debug = NoL;
 //        debug=upVec.y;
 
 
-        gl_FragData[0] = vec4(vec3(clamp(debug,0,1)),1);
+//        gl_FragData[0] = vec4(vec3(clamp(debug,0,1)),1);
 
     } else {
         albedo = vec4(0.0);
-        gl_FragData[0] = vec4(0.01,0,0,0.1);
+//        gl_FragData[0] = vec4(0.01,0,0,0.1);
 
     }
 
     /* DRAWBUFFERS:0 */
-    gl_FragData[0] = albedo;
+    gbuffer_data = albedo;
 
 
 //    #ifdef MCBL_SS

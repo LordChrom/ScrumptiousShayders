@@ -27,9 +27,11 @@ https://capttatsu.com
 #define gbufferProjectionInverse    lodProjectionInverse
 
 //Varyings//
-varying vec3 binormal, tangent;
+//varying vec3 binormal, tangent;
 
 //Common Variables//
+layout(location = 0) out vec4 gbuffer_data;
+
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
 float ang = (ang1 + (cos(ang1 * 3.14159265358979) * -0.5 + 0.5 - ang1) / 3.0) * 6.28318530717959;
@@ -277,11 +279,11 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
 
         #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2 || defined ADVANCED_MATERIALS
-        vec3 normalMap = vec3(0.0, 0.0, 1.0);
-
-        mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-        tangent.y, binormal.y, normal.y,
-        tangent.z, binormal.z, normal.z);
+//        vec3 normalMap = vec3(0.0, 0.0, 1.0);
+//
+//        mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
+//        tangent.y, binormal.y, normal.y,
+//        tangent.z, binormal.z, normal.z);
         #endif
 
         #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2
@@ -499,7 +501,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     albedo.a *= cloudBlendOpacity;
     #endif
 
-    gl_FragData[0] = albedo;
+    gbuffer_data = albedo;
 }
 
 #endif
