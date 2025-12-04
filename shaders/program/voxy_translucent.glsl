@@ -53,12 +53,6 @@ float time = float(worldTime) * 0.05 * ANIMATION_SPEED;
 float time = frameTimeCounter * ANIMATION_SPEED;
 #endif
 
-//
-//#ifdef ADVANCED_MATERIALS
-//vec2 dcdx = dFdx(texCoord);
-//vec2 dcdy = dFdy(texCoord);
-//#endif
-//
 vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
 
 ////Common Functions//
@@ -346,21 +340,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         float NoE = clamp(dot(newNormal, eastVec), -1.0, 1.0);
         float vanillaDiffuse = (0.25 * NoU + 0.75) + (0.667 - abs(NoE)) * (1.0 - abs(NoU)) * 0.15;
         vanillaDiffuse*= vanillaDiffuse;
-
-        #ifdef ADVANCED_MATERIALS
-        vec3 rawAlbedo = albedo.rgb * 0.999 + 0.001;
-        albedo.rgb *= ao;
-
-        #ifdef REFLECTION_SPECULAR
-        albedo.rgb *= 1.0 - metalness * smoothness;
-        #endif
-
-        #ifdef DIRECTIONAL_LIGHTMAP
-        mat3 lightmapTBN = GetLightmapTBN(viewPos);
-        lightmap.x = DirectionalLightmap(lightmap.x, lightmap.x, newNormal, lightmapTBN);
-        lightmap.y = DirectionalLightmap(lightmap.y, lightmap.y, newNormal, lightmapTBN);
-        #endif
-        #endif
 
         vec3 shadow = vec3(0.0);
             GetLighting(albedo.rgb, shadow, viewPos, worldPos, normal, lightmap, 1.0, NoL,
