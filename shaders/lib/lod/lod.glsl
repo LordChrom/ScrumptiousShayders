@@ -1,24 +1,4 @@
 
-#ifdef DISTANT_HORIZONS
-#define LOD_RENDERER
-#define lodNearPlane dhNearPlane
-#define lodFarPlane dhFarPlane
-
-uniform int dhRenderDistance;
-uniform float dhNearPlane;
-uniform float dhFarPlane;
-#define lodRenderDistance dhRenderDistance
-
-#define lodProjection dhProjection
-#define lodProjectionInverse dhProjectionInverse
-#define lodPreviousProjection dhPreviousProjection
-
-
-#define lodDepthTex dhDepthTex
-#define lodDepthTex0 dhDepthTex0
-#define lodDepthTex1 dhDepthTex1
-
-#endif
 
 #ifdef VOXY
 #define LOD_RENDERER
@@ -41,5 +21,34 @@ uniform int vxRenderDistance;
 
 #define lodPreviousModelView vxModelViewPrev
 #define lodPreviousProjection vxViewProjPrev
+
+#endif
+
+
+#if defined DISTANT_HORIZONS && !defined VOXY_PATCH
+
+#ifdef VOXY
+#define lodRenderDistance max(16*vxRenderDistance,dhRenderDistance)
+#else
+#define lodRenderDistance dhRenderDistance
+
+#endif
+
+#define LOD_RENDERER
+#define lodNearPlane dhNearPlane
+#define lodFarPlane dhFarPlane
+
+uniform int dhRenderDistance;
+uniform float dhNearPlane;
+uniform float dhFarPlane;
+
+#define lodProjection dhProjection
+#define lodProjectionInverse dhProjectionInverse
+#define lodPreviousProjection dhPreviousProjection
+
+
+#define lodDepthTex dhDepthTex
+#define lodDepthTex0 dhDepthTex0
+#define lodDepthTex1 dhDepthTex1
 
 #endif

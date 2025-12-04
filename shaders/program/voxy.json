@@ -6,6 +6,8 @@
         // can't include it directly into the JSON as it would cause syntax errors, so it is 
         // wrapped in a unused string field.
         #include "/lib/settings.glsl"
+
+        #define VOXY_PATCH
     ",
     "version": 1,
     "excludeLodsFromVanillaDepth": false,
