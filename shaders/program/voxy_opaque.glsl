@@ -20,7 +20,7 @@ https://capttatsu.com
 #define gbufferPreviousProjection   lodPreviousProjection
 
 ////Common Variables//
-layout(location = 0) out vec4 gbuffer_data;
+layout(location = 0) out vec4 gbufferData0;
 
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
@@ -148,184 +148,156 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //    albedo = (albedo * uint2vec4RGBA(interData.y)) + vec4(0,0,0,float(interData.w&0xFFu)/255);
 
 
-    if (albedo.a > 0.001) {
-        //DEFINITELY move this normal stuff to fragment shaders once voxy lets us do that.
-        //or figure out a way to circumvent this transformation
-        //Also fix translucent if this is fixed
-        vec3 normal;
-//        normal = mat3(vxModelView)*vec3(
-//        uint((parameters.face >> 1) == 2),
-//        uint((parameters.face >> 1) == 0),
-//        uint((parameters.face >> 1) == 1)
-//        );;
-//
-//        normal = vxModelView[((uint(parameters.face)>>1u)+1u)%3u].xyz;
-        //
-        switch(uint(parameters.face)>>1u){
-            case 0u:
-            normal = vxModelView[1].xyz;
-            break;
-            case 1u:
-            normal = vxModelView[2].xyz;
-            break;
-            case 2u:
-            normal = vxModelView[0].xyz;
-            break;
-        }
-        if((parameters.face&1)==0) normal=-normal;
 
-        //this can be done, but it actually reduces perf notably
-//        if(normal.z<0) discard;
+    //DEFINITELY move this normal stuff to fragment shaders once voxy lets us do that.
+    //or figure out a way to circumvent this transformation
+    //Also fix translucent if this is fixed
+    vec3 normal;
+    switch(uint(parameters.face)>>1u){
+        case 0u:
+        normal = vxModelView[1].xyz;
+        break;
+        case 1u:
+        normal = vxModelView[2].xyz;
+        break;
+        case 2u:
+        normal = vxModelView[0].xyz;
+        break;
+    }
+    if((parameters.face&1)==0) normal=-normal;
 
-        vec3 newNormal = normal;
+//      normal = vxModelView[((uint(parameters.face)>>1u)+1u)%3u].xyz;
 
-        vec2 lightmap = clamp(parameters.lightMap,vec2(0),vec2(1));
+    vec3 newNormal = normal;
 
-        vec3 hsv = RGB2HSV(albedo.rgb);
-        emission *= GetHardcodedEmission(albedo.rgb, hsv);
+    vec2 lightmap = clamp(parameters.lightMap,vec2(0),vec2(1));
 
-        vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
-        #ifdef TAA
-        vec3 viewPos = ToNDC(vec3(TAAJitter(screenPos.xy, -0.5), screenPos.z));
-        #else
-        vec3 viewPos = ToNDC(screenPos);
-        #endif
-        vec3 worldPos = mat3(vxModelViewInv) * viewPos + vxModelViewInv[3].xyz;
+    vec3 hsv = RGB2HSV(albedo.rgb);
+    emission *= GetHardcodedEmission(albedo.rgb, hsv);
 
-//        vec3 worldPos = ToWorld(viewPos);
+    vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
+    #ifdef TAA
+    vec3 viewPos = ToNDC(vec3(TAAJitter(screenPos.xy, -0.5), screenPos.z));
+    #else
+    vec3 viewPos = ToNDC(screenPos);
+    #endif
+    vec3 worldPos = mat3(vxModelViewInv) * viewPos + vxModelViewInv[3].xyz;
 
-        float dither = Bayer8(gl_FragCoord.xy);
+    float dither = Bayer8(gl_FragCoord.xy);
 
+    vec3 noisePos = (worldPos + cameraPosition) * 4.0;
+    float albedoLuma = GetLuminance(albedo.rgb);
+    float noiseAmount = (1.0 - albedoLuma * albedoLuma) * 0.05;
+    float albedoNoise = GetBlueNoise3D(noisePos, normal);
+    albedo.rgb = clamp(albedo.rgb + albedoNoise * noiseAmount, vec3(0.0), vec3(1.0));
 
-        //this doesnt save perf in voxy because it already prevents overdraw effectively
-        //        TODO test with lots of LOD terrain
-//        float viewLength = length(viewPos);
-//        float minDist = (dither - DH_OVERDRAW) * 16.0 + far;
-//        if (viewLength < minDist) {
-//            discard;
-//        }
+    #ifdef TOON_LIGHTMAP
+    lightmap = floor(lightmap * 14.999) / 14.0;
+    lightmap = clamp(lightmap, vec2(0.0), vec2(1.0));
+    #endif
 
-        vec3 noisePos = (worldPos + cameraPosition) * 4.0;
-        float albedoLuma = GetLuminance(albedo.rgb);
-        float noiseAmount = (1.0 - albedoLuma * albedoLuma) * 0.05;
-        float albedoNoise = GetBlueNoise3D(noisePos, normal);
-        albedo.rgb = clamp(albedo.rgb + albedoNoise * noiseAmount, vec3(0.0), vec3(1.0));
-//         albedo.rgb = vec3(albedoNoise + 0.5);
+    albedo.rgb = pow(albedo.rgb, vec3(2.2));
 
-        #ifdef TOON_LIGHTMAP
-        lightmap = floor(lightmap * 14.999) / 14.0;
-        lightmap = clamp(lightmap, vec2(0.0), vec2(1.0));
-        #endif
+    #ifdef EMISSIVE_RECOLOR
+    float ec = GetLuminance(albedo.rgb) * 1.7;
+    if (recolor > 0.5) {
+        albedo.rgb = blocklightCol * pow(ec, 1.5) / (BLOCKLIGHT_I * BLOCKLIGHT_I);
+        albedo.rgb /= 0.7 * albedo.rgb + 0.7;
+    }
+    if (lava > 0.5) {
+        albedo.rgb = pow(blocklightCol * ec / BLOCKLIGHT_I, vec3(2.0));
+        albedo.rgb /= 0.5 * albedo.rgb + 0.5;
+    }
+    #endif
 
-        albedo.rgb = pow(albedo.rgb, vec3(2.2));
-//
-        #ifdef EMISSIVE_RECOLOR
-        float ec = GetLuminance(albedo.rgb) * 1.7;
-        if (recolor > 0.5) {
-            albedo.rgb = blocklightCol * pow(ec, 1.5) / (BLOCKLIGHT_I * BLOCKLIGHT_I);
-            albedo.rgb /= 0.7 * albedo.rgb + 0.7;
-        }
-        if (lava > 0.5) {
-            albedo.rgb = pow(blocklightCol * ec / BLOCKLIGHT_I, vec3(2.0));
-            albedo.rgb /= 0.5 * albedo.rgb + 0.5;
-        }
-        #endif
+    #ifdef MCBL_SS
+    vec3 lightAlbedo = albedo.rgb + 0.00001;
+    if (lava > 0.5) {
+        lightAlbedo = pow(lightAlbedo, vec3(0.25));
+    }
+    lightAlbedo = sqrt(normalize(lightAlbedo) * emission);
 
-        #ifdef MCBL_SS
-        vec3 lightAlbedo = albedo.rgb + 0.00001;
-        if (lava > 0.5) {
-            lightAlbedo = pow(lightAlbedo, vec3(0.25));
-        }
-        lightAlbedo = sqrt(normalize(lightAlbedo) * emission);
+    #ifdef MULTICOLORED_BLOCKLIGHT
+//        lightAlbedo *= GetMCBLLegacyMask(worldPos);
+    #endif
+    #endif
 
-        #ifdef MULTICOLORED_BLOCKLIGHT
-        lightAlbedo *= GetMCBLLegacyMask(worldPos);
-        #endif
-        #endif
+    #ifdef WHITE_WORLD
+    albedo.rgb = vec3(0.35);
+    #endif
 
-        #ifdef WHITE_WORLD
-        albedo.rgb = vec3(0.35);
-        #endif
-//
-        vec3 outNormal = newNormal;
+    vec3 outNormal = newNormal;
 
-        #if HALF_LAMBERT_INTERNAL == 0
-        float NoL = clamp(dot(newNormal, lightVec), 0.0, 1.0);
-        #else
-        float NoL = clamp(dot(newNormal, lightVec) * 0.5 + 0.5, 0.0, 1.0);
-        NoL *= NoL;
-        #endif
-//        NoL = 0.3;
+    #if HALF_LAMBERT_INTERNAL == 0
+    float NoL = clamp(dot(newNormal, lightVec), 0.0, 1.0);
+    #else
+    float NoL = clamp(dot(newNormal, lightVec) * 0.5 + 0.5, 0.0, 1.0);
+    NoL *= NoL;
+    #endif
 
 
-        float NoU = clamp(dot(newNormal, upVec), -1.0, 1.0);
-        float NoE = clamp(dot(newNormal, eastVec), -1.0, 1.0);
-        float vanillaDiffuse = (0.25 * NoU + 0.75) + (0.667 - abs(NoE)) * (1.0 - abs(NoU)) * 0.15;
-        vanillaDiffuse*= vanillaDiffuse;
+    float NoU = clamp(dot(newNormal, upVec), -1.0, 1.0);
+    float NoE = clamp(dot(newNormal, eastVec), -1.0, 1.0);
+    float vanillaDiffuse = (0.25 * NoU + 0.75) + (0.667 - abs(NoE)) * (1.0 - abs(NoU)) * 0.15;
+    vanillaDiffuse*= vanillaDiffuse;
 
-        #ifndef NORMAL_PLANTS
-        if (foliage > 0.5) vanillaDiffuse *= 1.8;
-        #endif
+    #ifndef NORMAL_PLANTS
+    if (foliage > 0.5) vanillaDiffuse *= 1.8;
+    #endif
 
-        if (leaves > 0.5) {
+    if (leaves > 0.5) {
 //            float halfNoL = dot(newNormal, lightVec) * 0.5 + 0.5;
 //            basicSubsurface *= halfNoL * step(length(albedo.rgb), 1.7);
 //            basicSubsurface*=2;
 //            albedo.rgb*=1.5;
-        }
+    }
 
 
 
 
-        float parallaxShadow=1.0;
+    float parallaxShadow=1.0;
 
 
-//        #ifdef ADVANCED_MATERIALS
+    #ifdef ADVANCED_MATERIALS
 //        vec3 rawAlbedo = albedo.rgb * 0.999 + 0.001;
 //        albedo.rgb *= ao * ao;
 //
-//        #ifdef REFLECTION_SPECULAR
+    #ifdef REFLECTION_SPECULAR
 //        albedo.rgb *= 1.0 - metalness * smoothness;
-//        #endif
-//
+    #endif
+
 //        float doParallax = 0.0;
-//        #ifdef SELF_SHADOW
+    #ifdef SELF_SHADOW
 //        float parallaxNoL = dot(outNormal, lightVec);
-//        #ifdef OVERWORLD
+    #ifdef OVERWORLD
 //        doParallax = float(lightmap.y > 0.0 && parallaxNoL > 0.0);
-//        #endif
-//        #ifdef END
+    #endif
+    #ifdef END
 //        doParallax = float(parallaxNoL > 0.0);
-//        #endif
-//
+    #endif
 //        if (doParallax > 0.5 && skipParallax < 0.5) {
 //            parallaxShadow = GetParallaxShadow(surfaceDepth, parallaxFade, newCoord, lightVec,
 //            tbnMatrix);
 //        }
-//        #endif
+    #endif
 //
-//        #ifdef DIRECTIONAL_LIGHTMAP
+    #ifdef DIRECTIONAL_LIGHTMAP
 //        mat3 lightmapTBN = GetLightmapTBN(viewPos);
 //        lightmap.x = DirectionalLightmap(lightmap.x, lihgtmap.x, outNormal, lightmapTBN);
 //        lightmap.y = DirectionalLightmap(lightmap.y, lihgtmap.y, outNormal, lightmapTBN);
-//        #endif
-//        #endif
+    #endif
+    #endif
 
 
 
 
 
 
-        vec3 shadow = vec3(0.0);
-//        lightmap=vec2(0.8,0.8);
-//        emission=0.2;
-//        albedo.a=1;
-//        lightmap.y=0;
-//        lightmap.y=1;
+    vec3 shadow = vec3(0.0);
 
-        GetLighting(albedo.rgb, shadow, viewPos, worldPos, normal, lightmap, color.a, NoL,
-            vanillaDiffuse, parallaxShadow, emission, subsurface, basicSubsurface);
-//        lightmap.y=0.5;
+
+    GetLighting(albedo.rgb, shadow, viewPos, worldPos, normal, lightmap, color.a, NoL,
+        vanillaDiffuse, parallaxShadow, emission, subsurface, basicSubsurface);
 
 //        #ifdef ADVANCED_MATERIALS
 //        float puddles = 0.0;
@@ -351,49 +323,13 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //        albedo.rgb = albedo.rgb * (1.0 - fresnel3 * smoothness * smoothness * (1.0 - metalness));
 //        #endif
 
-        #if ALPHA_BLEND == 0
-        albedo.rgb = sqrt(max(albedo.rgb, vec3(0.0)));
-        #endif
-//        gl_FragData[0] = vec4(vec3(lightmap.x),1);
-//        float debug;
-        //		debug = albedo.a;
-//        debug = shadow.r*0.2;
-//        debug=newNormal.y;
-//        debug = NoL;
-//        debug=upVec.y;
+    #if ALPHA_BLEND == 0
+    albedo.rgb = sqrt(max(albedo.rgb, vec3(0.0)));
+    #endif
 
-
-//        gl_FragData[0] = vec4(vec3(clamp(debug,0,1)),1);
-
-    } else {
-        albedo = vec4(0.0);
-//        gl_FragData[0] = vec4(0.01,0,0,0.1);
-
-    }
 
     /* DRAWBUFFERS:0 */
-    gbuffer_data = albedo;
-
-
-//    #ifdef MCBL_SS
-//    /* DRAWBUFFERS:08 */
-//    gl_FragData[1] = vec4(lightAlbedo, 1.0);
-//
-//    #if defined ADVANCED_MATERIALS && defined REFLECTION_SPECULAR
-//    /* DRAWBUFFERS:08367 */
-//    gl_FragData[2] = vec4(smoothness, skyOcclusion, 0.0, 1.0);
-//    gl_FragData[3] = vec4(EncodeNormal(newNormal), float(gl_FragCoord.z < 1.0), 1.0);
-//    gl_FragData[4] = vec4(fresnel3, 1.0);
-//    #endif
-//    #else
-//    #if defined ADVANCED_MATERIALS && defined REFLECTION_SPECULAR
-//    /* DRAWBUFFERS:0367 */
-//    gl_FragData[1] = vec4(smoothness, skyOcclusion, 0.0, 1.0);
-//    gl_FragData[2] = vec4(EncodeNormal(newNormal), float(gl_FragCoord.z < 1.0), 1.0);
-//    gl_FragData[3] = vec4(fresnel3, 1.0);
-//    #endif
-//    #endif
+    gbufferData0 = albedo;
 }
-
 
 #endif
