@@ -22,7 +22,7 @@
 
 
 
-//#ifdef TAA
+#ifdef TAA
     "taaOffset": "{
     const vec2 mul = 1.0 / vec2(viewWidth, viewHeight);
     #if TAA_MODE == 0
@@ -46,7 +46,7 @@
     #endif
     return vec2(0.0);
     }",
-//#endif
+#endif
 
     "uniforms": [
         "bedrockLevel",
