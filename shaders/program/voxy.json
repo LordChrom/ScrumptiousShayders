@@ -120,6 +120,8 @@
         "vxDepthTexTrans":"sampler2D",
         #if CLOUDS == 2
         "gaux1":"sampler2D",
+        #endif
+        #if COULDS == 0
         "gaux2":"sampler2D",
         #endif
         "depthtex1":"sampler2D",

@@ -213,7 +213,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //         albedo.rgb = vec3(albedoNoise + 0.5);
 
         #ifdef TOON_LIGHTMAP
-        lightmap = floor(lmCoord * 14.999) / 14.0;
+        lightmap = floor(lightmap * 14.999) / 14.0;
         lightmap = clamp(lightmap, vec2(0.0), vec2(1.0));
         #endif
 
@@ -306,8 +306,8 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //
 //        #ifdef DIRECTIONAL_LIGHTMAP
 //        mat3 lightmapTBN = GetLightmapTBN(viewPos);
-//        lightmap.x = DirectionalLightmap(lightmap.x, lmCoord.x, outNormal, lightmapTBN);
-//        lightmap.y = DirectionalLightmap(lightmap.y, lmCoord.y, outNormal, lightmapTBN);
+//        lightmap.x = DirectionalLightmap(lightmap.x, lihgtmap.x, outNormal, lightmapTBN);
+//        lightmap.y = DirectionalLightmap(lightmap.y, lihgtmap.y, outNormal, lightmapTBN);
 //        #endif
 //        #endif
 
