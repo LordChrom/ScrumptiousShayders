@@ -98,7 +98,8 @@ option.SHADOW.comment=Enables realtime, dynamic shadow mapping.
 
 option.shadowMapResolution=Shadowmap Quality
 option.shadowMapResolution.comment=Adjusts shadowmap size. §e[*]§rHigher resolution gives sharper shadows, but reduces performance.
-value.shadowMapResolution.512=Very Low (0.5K)
+value.shadowMapResolution.512=Dismal (256)
+value.shadowMapResolution.512=Very Low (512)
 value.shadowMapResolution.1024=Low (1K)
 value.shadowMapResolution.1536=Low Medium (1.5K)
 value.shadowMapResolution.2048=Medium (2K)
@@ -108,6 +109,7 @@ value.shadowMapResolution.8192=Ultra High (8K)
 
 option.shadowDistance=Shadow Distance
 option.shadowDistance.comment=Adjusts shadow distance.
+value.shadowDistance.64=4 chunks
 value.shadowDistance.128=8 chunks
 value.shadowDistance.192=12 chunks
 value.shadowDistance.256=16 chunks
@@ -206,6 +208,8 @@ option.MCBL_FOG_STRENGTH.comment=Adjusts blocklight fog strength.
 
 option.MCBL_DISTANCE=Distance
 option.MCBL_DISTANCE.comment=Adjusts multi-colored blocklight distance. §e[*]§rVertical (Y) size is capped to 256 blocks.
+value.MCBL_DISTANCE.64=2 chunks
+value.MCBL_DISTANCE.96=3 chunks
 value.MCBL_DISTANCE.128=4 chunks
 value.MCBL_DISTANCE.192=6 chunks
 value.MCBL_DISTANCE.256=8 chunks
