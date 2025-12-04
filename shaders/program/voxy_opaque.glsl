@@ -112,13 +112,34 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 
 //Program//
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
-    if(parameters.sampledColour.a<0.001){
-        discard;
-    }
-
     uint blockId = parameters.customId;
     vec4 color = parameters.tinting;
 
+
+
+    float leaves   = float(blockId==10500);
+
+    if(parameters.sampledColour.a<0.001){
+
+        #if VOXY_FAKE_LEAF_SHADOW == 1 || VOXY_FAKE_LEAF_SHADOW == 3
+        if(leaves>0){
+            //        float dither = Bayer8(uv);
+            float dither = Bayer4(gl_FragCoord.xy+gl_FragCoord.z);
+
+            float ditherDarkness = 0.5;
+
+            if (parameters.face==1){
+                ditherDarkness=0.7;
+            }
+
+            if (dither<ditherDarkness){
+                gbufferData0=vec4(color.rgb*0.1,0);
+                return;
+            }
+        }
+        #endif
+        discard;
+    }
 
     #ifdef GLOWING_ORES
     float emissive = float(blockId<=16100 && 15003<=blockId);
@@ -126,7 +147,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     float emissive = float(blockId<=15900 && 15003<=blockId);
     #endif
     float foliage  = float(blockId==10000);
-    float leaves   = float(blockId==10500);
     float lava     = float(blockId==15302);
     float candle = 0;
 
@@ -135,15 +155,21 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     float metalness       = 0.0;
     float emission        = (emissive + candle + lava + portal);
     float subsurface      = 0.0;
-    float basicSubsurface = (foliage + candle) * 0.5 + leaves;
+    float basicSubsurface = (foliage + candle+leaves) * 0.5 + leaves;
     vec3 baseReflectance  = vec3(0.04);
 
+    vec2 lightmap = clamp(parameters.lightMap,vec2(0),vec2(1));
 
 
-//    gbufferData0 = vec4(portal,0,0,0);return;
 
     if(leaves>0){
-        color.rgb *= (1.225/1.08);
+        color.rgb*-1.225/1.08;
+
+        #if VOXY_FAKE_LEAF_SHADOW == 2 || VOXY_FAKE_LEAF_SHADOW == 3
+        if((uint(parameters.face)>>1u!=0u) && lightmap.y>=0.95){
+            color.rgb*=0.8;
+        }
+        #endif
     }
 
     vec4 albedo = parameters.sampledColour * vec4(color.rgb, 1.0);
@@ -173,7 +199,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     vec3 newNormal = normal;
 
-    vec2 lightmap = clamp(parameters.lightMap,vec2(0),vec2(1));
 
     vec3 hsv = RGB2HSV(albedo.rgb);
     emission *= GetHardcodedEmission(albedo.rgb, hsv);
@@ -258,6 +283,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     GetLighting(albedo.rgb, shadow, viewPos, worldPos, normal, lightmap, color.a, NoL,
         vanillaDiffuse, parallaxShadow, emission, subsurface, basicSubsurface);
+
 
     #if ALPHA_BLEND == 0
     albedo.rgb = sqrt(max(albedo.rgb, vec3(0.0)));

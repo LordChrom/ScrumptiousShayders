@@ -1195,3 +1195,10 @@ value.VOXY_TRANSLUCENTS.0 = None
 value.VOXY_TRANSLUCENTS.1 = Fast
 value.VOXY_TRANSLUCENTS.2 = Color
 value.VOXY_TRANSLUCENTS.3 = Full
+
+option.VOXY_FAKE_LEAF_SHADOW=Voxy Leaf Shadows
+option.VOXY_FAKE_LEAF_SHADOW.comment=Approximates the appearance of shadows on leaves for forests. Dither makes the gaps in leaves be semi-opaque. Darken makes the edges darker
+value.VOXY_FAKE_LEAF_SHADOW.0 = None
+value.VOXY_FAKE_LEAF_SHADOW.1 = Dither
+value.VOXY_FAKE_LEAF_SHADOW.2 = Darken
+value.VOXY_FAKE_LEAF_SHADOW.3 = Both
