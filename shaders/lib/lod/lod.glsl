@@ -5,6 +5,8 @@
 #define lodFarPlane dhFarPlane
 
 uniform int dhRenderDistance;
+uniform float dhNearPlane;
+uniform float dhFarPlane;
 #define lodRenderDistance dhRenderDistance
 
 #define lodProjection dhProjection
