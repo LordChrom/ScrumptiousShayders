@@ -51,7 +51,7 @@ vec3 ApplyMultiColoredBlocklight(vec3 blocklightCol, vec3 screenPos, vec3 worldP
 	vec3 mcblCol = vec3(0.0);
 	float voxelBounds = 0.0;
 
-	#if defined MULTICOLORED_BLOCKLIGHT && !defined VOXY_PATCH
+	#if defined MULTICOLORED_BLOCKLIGHT
 	vec3 worldNormal = mat3(gbufferModelViewInverse) * normal;
 	worldPos += worldNormal * 0.5;
 

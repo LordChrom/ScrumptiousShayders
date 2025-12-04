@@ -9,6 +9,9 @@ https://capttatsu.com
 
 //Fragment Shader///////////////////////////////////////////////////////////////////////////////////
 #ifdef FSH
+
+#undef MULTICOLORED_BLOCKLIGHT
+
 layout(location = 0) out vec4 gbufferData0;
 #ifdef MCBL_SS
 layout(location = 1) out vec4 gbufferData1;
