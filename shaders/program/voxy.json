@@ -9,7 +9,11 @@
     ",
     "version": 1,
     "excludeLodsFromVanillaDepth": false,
-    "opaqueDrawBuffers": [0],
+    "opaqueDrawBuffers": [0
+    #ifdef MCBL_SS
+      ,8
+    #endif
+    ],
     "translucentDrawBuffers": [0],
     "blending": {
         -1: "off",
@@ -84,7 +88,7 @@
         "isJungle",
         #endif
 
-        //#ifdef TAA
+        #ifdef TAA
         #if TAA_MODE == 0
         "framemod8",
         #else
@@ -97,7 +101,6 @@
         "heldItemId",
         "heldItemId2",
         "previousCameraPosition",
-        "gbufferPreviousModelView",
         #endif
 
         "eyeBrightnessSmooth"
@@ -121,9 +124,7 @@
         #if CLOUDS == 2
         "gaux1":"sampler2D",
         #endif
-        #if COULDS == 0
         "gaux2":"sampler2D",
-        #endif
         "depthtex1":"sampler2D",
         "noisetex": "sampler2D"
     }

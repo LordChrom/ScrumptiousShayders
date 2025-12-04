@@ -9,6 +9,8 @@ https://capttatsu.com
 
 //Fragment Shader///////////////////////////////////////////////////////////////////////////////////
 #ifdef FSH
+layout(location = 0) out vec4 gbuffer_data;
+
 #if VOXY_TRANSLUCENTS < 3
 #undef ADVANCED_MATERIALS
 #undef REFLECTION_TRANSLUCENT
@@ -33,7 +35,6 @@ https://capttatsu.com
 //varying vec3 binormal, tangent;
 
 //Common Variables//
-layout(location = 0) out vec4 gbuffer_data;
 
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
@@ -137,6 +138,7 @@ float GetLuminance(vec3 color) {
 #include "/lib/color/skyColor.glsl"
 #include "/lib/color/specularColor.glsl"
 #include "/lib/color/waterColor.glsl"
+#include "/lib/util/dither.glsl"
 #include "/lib/util/spaceConversion.glsl"
 #include "/lib/atmospherics/weatherDensity.glsl"
 #include "/lib/atmospherics/sky.glsl"

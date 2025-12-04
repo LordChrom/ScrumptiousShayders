@@ -21,6 +21,23 @@ vec3 ApplyHandlightColor(vec3 mcblCol, vec3 worldPos) {
 }
 
 #ifdef MCBL_SS
+#ifdef VOXY_PATCH
+vec2 Reprojection(vec3 pos) {
+	pos = pos * 2.0 - 1.0;
+
+	vec4 viewPosPrev = lodProjectionInverse * vec4(pos, 1.0);
+	viewPosPrev /= viewPosPrev.w;
+	viewPosPrev = lodModelViewInverse * viewPosPrev;
+
+	vec3 cameraOffset = cameraPosition - previousCameraPosition;
+	cameraOffset *= float(pos.z > 0.56);
+
+	vec4 previousPosition = viewPosPrev + vec4(cameraOffset, 0.0);
+	previousPosition = lodPreviousModelView * previousPosition;
+	previousPosition = lodPreviousProjection * previousPosition;
+	return previousPosition.xy / previousPosition.w * 0.5 + 0.5;
+}
+#else
 vec2 Reprojection(vec3 pos) {
 	pos = pos * 2.0 - 1.0;
 
@@ -36,6 +53,7 @@ vec2 Reprojection(vec3 pos) {
 	previousPosition = gbufferPreviousProjection * previousPosition;
 	return previousPosition.xy / previousPosition.w * 0.5 + 0.5;
 }
+#endif
 #endif
 
 float GetMCBLLegacyMask(vec3 worldPos) {

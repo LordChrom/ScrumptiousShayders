@@ -21,6 +21,9 @@ https://capttatsu.com
 
 ////Common Variables//
 layout(location = 0) out vec4 gbufferData0;
+#ifdef MCBL_SS
+layout(location = 1) out vec4 gbufferData1;
+#endif
 
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
@@ -74,6 +77,7 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 #include "/lib/color/lightSkyColor.glsl"
 #include "/lib/color/skyColor.glsl"
 #include "/lib/color/specularColor.glsl"
+#include "/lib/util/dither.glsl"
 #include "/lib/util/spaceConversion.glsl"
 #include "/lib/atmospherics/weatherDensity.glsl"
 #include "/lib/atmospherics/sky.glsl"
@@ -202,7 +206,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     lightAlbedo = sqrt(normalize(lightAlbedo) * emission);
 
     #ifdef MULTICOLORED_BLOCKLIGHT
-//        lightAlbedo *= GetMCBLLegacyMask(worldPos);
+        lightAlbedo *= GetMCBLLegacyMask(worldPos);
     #endif
     #endif
 
@@ -226,6 +230,11 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vanillaDiffuse*= vanillaDiffuse;
 
 
+    #if defined MULTICOLORED_BLOCKLIGHT || defined MCBL_SS
+    blocklightCol = ApplyMultiColoredBlocklight(blocklightCol, screenPos, worldPos, newNormal);
+    #endif
+
+
     float parallaxShadow=1.0;
     vec3 shadow = vec3(0.0);
 
@@ -240,6 +249,12 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     /* DRAWBUFFERS:0 */
     gbufferData0 = albedo;
+
+    #ifdef MCBL_SS
+    /* DRAWBUFFERS:08 */
+    gbufferData1 = vec4(lightAlbedo, 1.0);
+//    gbufferData1 = vec4(0,0.01,0, 100.0);
+    #endif
 }
 
 #endif
