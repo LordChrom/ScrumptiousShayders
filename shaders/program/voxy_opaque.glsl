@@ -112,6 +112,10 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 
 //Program//
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
+    if(parameters.sampledColour.a<0.001){
+        discard;
+    }
+
     uint blockId = parameters.customId;
     vec4 color = parameters.tinting;
 
@@ -139,7 +143,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //    gbufferData0 = vec4(portal,0,0,0);return;
 
     if(leaves>0){
-        color.rgb *= 1.225;
+        color.rgb *= (1.225/1.08);
     }
 
     vec4 albedo = parameters.sampledColour * vec4(color.rgb, 1.0);
