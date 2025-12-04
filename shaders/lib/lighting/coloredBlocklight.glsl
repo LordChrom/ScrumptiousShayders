@@ -21,23 +21,6 @@ vec3 ApplyHandlightColor(vec3 mcblCol, vec3 worldPos) {
 }
 
 #ifdef MCBL_SS
-#ifdef VOXY_PATCH
-vec2 Reprojection(vec3 pos) {
-	pos = pos * 2.0 - 1.0;
-
-	vec4 viewPosPrev = lodProjectionInverse * vec4(pos, 1.0);
-	viewPosPrev /= viewPosPrev.w;
-	viewPosPrev = lodModelViewInverse * viewPosPrev;
-
-	vec3 cameraOffset = cameraPosition - previousCameraPosition;
-	cameraOffset *= float(pos.z > 0.56);
-
-	vec4 previousPosition = viewPosPrev + vec4(cameraOffset, 0.0);
-	previousPosition = lodPreviousModelView * previousPosition;
-	previousPosition = lodPreviousProjection * previousPosition;
-	return previousPosition.xy / previousPosition.w * 0.5 + 0.5;
-}
-#else
 vec2 Reprojection(vec3 pos) {
 	pos = pos * 2.0 - 1.0;
 
@@ -54,7 +37,6 @@ vec2 Reprojection(vec3 pos) {
 	return previousPosition.xy / previousPosition.w * 0.5 + 0.5;
 }
 #endif
-#endif
 
 float GetMCBLLegacyMask(vec3 worldPos) {
 	#if MCBL_SS_MODE == 0 && defined MULTICOLORED_BLOCKLIGHT
@@ -69,7 +51,7 @@ vec3 ApplyMultiColoredBlocklight(vec3 blocklightCol, vec3 screenPos, vec3 worldP
 	vec3 mcblCol = vec3(0.0);
 	float voxelBounds = 0.0;
 
-	#ifdef MULTICOLORED_BLOCKLIGHT
+	#if defined MULTICOLORED_BLOCKLIGHT && !defined VOXY_PATCH
 	vec3 worldNormal = mat3(gbufferModelViewInverse) * normal;
 	worldPos += worldNormal * 0.5;
 
@@ -103,9 +85,11 @@ vec3 ApplyMultiColoredBlocklight(vec3 blocklightCol, vec3 screenPos, vec3 worldP
 	#endif
 
 	#ifdef MCBL_SS
+	#ifndef VOXY_PATCH //worth further investigation why this breaks in voxy
 	if (screenPos.z > 0.56) {
 		screenPos.xy = Reprojection(screenPos);
 	}
+	#endif
 
 	//this might need an "ifdef VXOY_PATCH else use texture2DLod otherwise, but texture2DLod is deprecated anyways
 	vec3 ssmcblCol = texture2D(colortex9, screenPos.xy, 2).rgb;

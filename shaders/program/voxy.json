@@ -9,12 +9,18 @@
     ",
     "version": 1,
     "excludeLodsFromVanillaDepth": false,
-    "opaqueDrawBuffers": [0
-    #ifdef MCBL_SS
-      ,8
-    #endif
+    "opaqueDrawBuffers": [
+      0
+      #ifdef MCBL_SS
+        ,8
+      #endif
     ],
-    "translucentDrawBuffers": [0],
+    "translucentDrawBuffers": [
+      0
+      #ifdef MCBL_SS
+        ,8
+      #endif
+    ],
     "blending": {
         -1: "off",
         0: "SRC_ALPHA ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA"
@@ -116,6 +122,7 @@
         #endif,
 
 	    #ifdef MCBL_SS
+        "colortex8":"sampler2D",
         "colortex9":"sampler2D",
         #endif
 

@@ -9,7 +9,10 @@ https://capttatsu.com
 
 //Fragment Shader///////////////////////////////////////////////////////////////////////////////////
 #ifdef FSH
-layout(location = 0) out vec4 gbuffer_data;
+layout(location = 0) out vec4 gbufferData0;
+#ifdef MCBL_SS
+layout(location = 1) out vec4 gbufferData1;
+#endif
 
 #if VOXY_TRANSLUCENTS < 3
 #undef ADVANCED_MATERIALS
@@ -35,6 +38,8 @@ layout(location = 0) out vec4 gbuffer_data;
 //varying vec3 binormal, tangent;
 
 //Common Variables//
+const float glassAlphaFudge = 0.6;
+const float glassRgbFudge =1.2;
 
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
@@ -151,6 +156,11 @@ float GetLuminance(vec3 color) {
 #include "/lib/util/jitter.glsl"
 #endif
 
+#ifdef MCBL_SS
+#include "/lib/util/voxelMapHelper.glsl"
+#include "/lib/lighting/coloredBlocklight.glsl"
+#endif
+
 /*
 struct VoxyFragmentParameters {
     vec4 sampledColour;
@@ -227,22 +237,11 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         float basicSubsurface = water;
         vec3 baseReflectance  = vec3(0.04);
 
-        //fudge factor for glass
-        //doesn't look perfect but looks pretty close
-        //the actual albedo and RGB match,
-        //so this is definitely compensating for some other discrepancy
-        if(glass>0.5){
-            albedo.a*=0.4;
-            albedo.rgb*=2.5;
-        }
 
         vec3 hsv = RGB2HSV(albedo.rgb);
         emission *= GetHardcodedEmission(albedo.rgb, hsv);
 
-        #ifndef REFLECTION_TRANSLUCENT
-        glass = 0.0;
-        translucent = 0.0;
-        #endif
+
 
         #ifdef TAA
         vec3 viewPos = ToNDC(vec3(TAAJitter(screenPos.xy, -0.5), screenPos.z));
@@ -301,6 +300,40 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         albedo.rgb = pow(albedo.rgb, vec3(2.2));
 
         vlAlbedo = albedo.rgb;
+
+        #ifdef MCBL_SS
+        vec3 opaquelightAlbedo = texture2D(colortex8, screenPos.xy).rgb;
+        if (water < 0.5) {
+            opaquelightAlbedo *= vlAlbedo;
+        }
+        lightAlbedo = albedo.rgb + 0.00001;
+
+//        if (portal > 0.5) {
+//            lightAlbedo = lightAlbedo * 0.95 + 0.05;
+//        }
+
+        lightAlbedo = normalize(lightAlbedo + 0.00001) * emission;
+        lightAlbedo = mix(opaquelightAlbedo, sqrt(lightAlbedo), albedo.a);
+
+        #ifdef MULTICOLORED_BLOCKLIGHT
+        lightAlbedo *= GetMCBLLegacyMask(worldPos);
+        #endif
+        #endif
+
+
+        //fudge factor for glass
+        //doesn't look perfect but looks pretty close
+        //the actual albedo and RGB match,
+        //so this is definitely compensating for some other discrepancy
+        if(glass>0.5){
+            albedo.a*=glassAlphaFudge;
+            albedo.rgb*=glassRgbFudge;
+        }
+
+        #ifndef REFLECTION_TRANSLUCENT
+        glass = 0.0;
+        translucent = 0.0;
+        #endif
 
         #ifdef WHITE_WORLD
         albedo.rgb = vec3(0.35);
@@ -448,7 +481,12 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     albedo.a *= cloudBlendOpacity;
     #endif
 
-    gbuffer_data = albedo;
+    gbufferData0 = albedo;
+
+    #ifdef MCBL_SS
+    /* DRAWBUFFERS:08 */
+    gbufferData1 = vec4(lightAlbedo, 1.0);
+    #endif
 }
 
 #endif

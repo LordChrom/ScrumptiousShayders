@@ -126,13 +126,17 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     float lava     = float(blockId==15302);
     float candle = 0;
 
+    float portal = float(blockId==20310);
+
     float metalness       = 0.0;
-    float emission        = (emissive + candle + lava);
+    float emission        = (emissive + candle + lava + portal);
     float subsurface      = 0.0;
     float basicSubsurface = (foliage + candle) * 0.5 + leaves;
     vec3 baseReflectance  = vec3(0.04);
 
 
+
+//    gbufferData0 = vec4(portal,0,0,0);return;
 
     if(leaves>0){
         color.rgb *= 1.225;
@@ -204,6 +208,15 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         lightAlbedo = pow(lightAlbedo, vec3(0.25));
     }
     lightAlbedo = sqrt(normalize(lightAlbedo) * emission);
+//
+//    if(emission>0.5)
+//        lightAlbedo=vec3(0.5,0,0);
+//    else
+//        lightAlbedo=vec3(0);
+//
+//    if(portal>0){
+//        lightAlbedo=vec3(1,0,1);
+//    }
 
     #ifdef MULTICOLORED_BLOCKLIGHT
         lightAlbedo *= GetMCBLLegacyMask(worldPos);
