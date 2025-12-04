@@ -51,7 +51,7 @@ vec3 ApplyMultiColoredBlocklight(vec3 blocklightCol, vec3 screenPos, vec3 worldP
 	vec3 mcblCol = vec3(0.0);
 	float voxelBounds = 0.0;
 
-	#ifdef MULTICOLORED_BLOCKLIGHT
+	#if defined MULTICOLORED_BLOCKLIGHT
 	vec3 worldNormal = mat3(gbufferModelViewInverse) * normal;
 	worldPos += worldNormal * 0.5;
 
@@ -85,11 +85,14 @@ vec3 ApplyMultiColoredBlocklight(vec3 blocklightCol, vec3 screenPos, vec3 worldP
 	#endif
 
 	#ifdef MCBL_SS
+	#ifndef VOXY_PATCH //worth further investigation why this breaks in voxy
 	if (screenPos.z > 0.56) {
 		screenPos.xy = Reprojection(screenPos);
 	}
+	#endif
 
-	vec3 ssmcblCol = texture2DLod(colortex9, screenPos.xy, 2).rgb;
+	//this might need an "ifdef VXOY_PATCH else use texture2DLod otherwise, but texture2DLod is deprecated anyways
+	vec3 ssmcblCol = texture2D(colortex9, screenPos.xy, 2).rgb;
 	float ssmcblFactor = min((ssmcblCol.r + ssmcblCol.g + ssmcblCol.b) * 2048.0, 1.0);
 
 	#if MCBL_SS_MODE == 0 && defined MULTICOLORED_BLOCKLIGHT

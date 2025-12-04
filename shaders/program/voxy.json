@@ -6,25 +6,55 @@
         // can't include it directly into the JSON as it would cause syntax errors, so it is 
         // wrapped in a unused string field.
         #include "/lib/settings.glsl"
+
+        #define VOXY_PATCH
     ",
     "version": 1,
     "excludeLodsFromVanillaDepth": false,
-    "opaqueDrawBuffers": [0],
-    "translucentDrawBuffers": [0],
+    "opaqueDrawBuffers": [
+      0
+      #ifdef MCBL_SS
+        ,8
+      #endif
+    ],
+    "translucentDrawBuffers": [
+      0
+      #ifdef MCBL_SS
+        ,8
+      #endif
+    ],
     "blending": {
         -1: "off",
-   //     0: "ONE ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA"
-       0: "SRC_ALPHA ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA"
+        0: "SRC_ALPHA ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA"
     },
-//#ifdef TAA
-//    "taaOffset": "{
-//    #ifdef TAAU
-//        return taa_offset;
-//    #else
-//        return taa_offset * 0.66;
-//    #endif
-//    }",
-//#endif
+
+
+
+#ifdef TAA
+    "taaOffset": "{
+    const vec2 mul = 1.0 / vec2(viewWidth, viewHeight);
+    #if TAA_MODE == 0
+    const vec2 jitterOffsets8[8] = vec2[8](
+      vec2( 0.125,-0.375)*mul,
+      vec2(-0.125, 0.375)*mul,
+      vec2( 0.625, 0.125)*mul,
+      vec2( 0.375,-0.625)*mul,
+      vec2(-0.625, 0.625)*mul,
+      vec2(-0.875,-0.125)*mul,
+      vec2( 0.375,-0.875)*mul,
+      vec2( 0.875, 0.875)*mul
+    );
+    return jitterOffsets8[int(framemod8)];
+    #else
+    const vec2 jitterOffsets2[2] = vec2[2](
+      vec2( 1.0,  0.0)*mul,
+      vec2( 0.0,  1.0)*mul
+    );
+    return jitterOffsets2[int(framemod2)];
+    #endif
+    return vec2(0.0);
+    }",
+#endif
 
     "uniforms": [
         "bedrockLevel",
@@ -51,12 +81,8 @@
 
 
         "cameraPosition",
-        "vxModelView", "vxModelViewInv",
-        "vxProj", "vxProjInv",
-    //    "gbufferModelView",
-    //    "gbufferModelViewInverse",
-    //    "gbufferProjection",
-    //    "gbufferProjectionInverse",
+        "vxModelView", "vxModelViewInv","vxModelViewPrev",
+        "vxProj", "vxProjInv", "vxViewProjPrev",
         "shadowProjection",
         "shadowModelView",
 
@@ -68,6 +94,21 @@
         "isMushroom",
         "isSavanna",
         "isJungle",
+        #endif
+
+        #ifdef TAA
+        #if TAA_MODE == 0
+        "framemod8",
+        #else
+        "framemod2",
+        #endif
+        #endif
+
+        #ifdef MCBL_SS
+        "relativeEyePosition",
+        "heldItemId",
+        "heldItemId2",
+        "previousCameraPosition",
         #endif
 
         "eyeBrightnessSmooth"
@@ -82,12 +123,17 @@
             #endif
         #endif,
 
+	    #ifdef MCBL_SS
+        "colortex8":"sampler2D",
+        "colortex9":"sampler2D",
+        #endif
+
         "vxDepthTexOpaque":"sampler2D",
         "vxDepthTexTrans":"sampler2D",
         #if CLOUDS == 2
         "gaux1":"sampler2D",
-        "gaux2":"sampler2D",
         #endif
+        "gaux2":"sampler2D",
         "depthtex1":"sampler2D",
         "noisetex": "sampler2D"
     }

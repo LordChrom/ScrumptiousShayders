@@ -9,11 +9,20 @@ https://capttatsu.com
 
 //Fragment Shader///////////////////////////////////////////////////////////////////////////////////
 #ifdef FSH
+
+#undef MULTICOLORED_BLOCKLIGHT
+
+layout(location = 0) out vec4 gbufferData0;
+#ifdef MCBL_SS
+layout(location = 1) out vec4 gbufferData1;
+#endif
+
 #if VOXY_TRANSLUCENTS < 3
 #undef ADVANCED_MATERIALS
 #undef REFLECTION_TRANSLUCENT
 #undef REFLECTION_SPECULAR
 #undef DIRECTIONAL_LIGHTMAP
+#undef WATER_FOG
 
 #define REFLECTIONS 0
 #define WATER_NORMALS_INTERNAL 0
@@ -25,11 +34,16 @@ https://capttatsu.com
 #define gbufferModelViewInverse     lodModelViewInverse
 #define gbufferProjection           lodProjection
 #define gbufferProjectionInverse    lodProjectionInverse
+#define gbufferPreviousModelView    lodPreviousModelView
+#define gbufferPreviousProjection   lodPreviousProjection
 
 //Varyings//
-varying vec3 binormal, tangent;
+//varying vec3 binormal, tangent;
 
 //Common Variables//
+const float glassAlphaFudge = 0.6;
+const float glassRgbFudge =1.2;
+
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
 float ang = (ang1 + (cos(ang1 * 3.14159265358979) * -0.5 + 0.5 - ang1) / 3.0) * 6.28318530717959;
@@ -47,12 +61,6 @@ float time = float(worldTime) * 0.05 * ANIMATION_SPEED;
 float time = frameTimeCounter * ANIMATION_SPEED;
 #endif
 
-//
-//#ifdef ADVANCED_MATERIALS
-//vec2 dcdx = dFdx(texCoord);
-//vec2 dcdy = dFdy(texCoord);
-//#endif
-//
 vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
 
 ////Common Functions//
@@ -151,6 +159,11 @@ float GetLuminance(vec3 color) {
 #include "/lib/util/jitter.glsl"
 #endif
 
+#ifdef MCBL_SS
+#include "/lib/util/voxelMapHelper.glsl"
+#include "/lib/lighting/coloredBlocklight.glsl"
+#endif
+
 /*
 struct VoxyFragmentParameters {
     vec4 sampledColour;
@@ -194,7 +207,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
         vec4 color = parameters.tinting;
 
-        //Convert to vertex shader if possible when voxy lets us. See opaque
+        //voxy vertex shader thing
         vec3 normal;
 
         switch(parameters.face>>1){
@@ -227,22 +240,11 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         float basicSubsurface = water;
         vec3 baseReflectance  = vec3(0.04);
 
-        //fudge factor for glass
-        //doesn't look perfect but looks pretty close
-        //the actual albedo and RGB match,
-        //so this is definitely compensating for some other discrepancy
-        if(glass>0.5){
-            albedo.a*=0.4;
-            albedo.rgb*=2.5;
-        }
 
         vec3 hsv = RGB2HSV(albedo.rgb);
         emission *= GetHardcodedEmission(albedo.rgb, hsv);
 
-        #ifndef REFLECTION_TRANSLUCENT
-        glass = 0.0;
-        translucent = 0.0;
-        #endif
+
 
         #ifdef TAA
         vec3 viewPos = ToNDC(vec3(TAAJitter(screenPos.xy, -0.5), screenPos.z));
@@ -253,21 +255,16 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
         float dither = Bayer8(gl_FragCoord.xy);
 
-//  this doesnt save perf in voxy because it already prevents overdraw effectively
-//        float viewLength = length(viewPos);
-//        float minDist = (dither - DH_OVERDRAW) * 16.0 + far;
-//        if (viewLength < minDist) {
-//            discard;
-//        }
+
+
 //        #if CLOUDS == 2
+//        float viewLength = length(viewPos);
 //        float cloudMaxDistance = 2.0 * far;
-//        #ifdef LOD_RENDERER
 //        cloudMaxDistance = max(cloudMaxDistance, lodFarPlane);
-//        #endif
 //
 //        float cloudViewLength = texture2D(gaux1, screenPos.xy).r * cloudMaxDistance;
 //
-//  this is broken in voxy
+//  this is broken in voxy from what I can tell
 //        cloudBlendOpacity = step(viewLength, cloudViewLength);
 //        cloudBlendOpacity=1;
 //        if (cloudBlendOpacity == 0) {
@@ -277,11 +274,11 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
 
         #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2 || defined ADVANCED_MATERIALS
-        vec3 normalMap = vec3(0.0, 0.0, 1.0);
-
-        mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-        tangent.y, binormal.y, normal.y,
-        tangent.z, binormal.z, normal.z);
+//        vec3 normalMap = vec3(0.0, 0.0, 1.0);
+//
+//        mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
+//              tangent.y, binormal.y, normal.y,
+//              tangent.z, binormal.z, normal.z);
         #endif
 
         #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2
@@ -291,18 +288,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //        }
         #endif
 
-        #ifdef ADVANCED_MATERIALS
-        float f0 = 0.0, porosity = 0.5, ao = 1.0, skyOcclusion = 0.0;
-//        if (water < 0.5) {
-//            GetMaterials(smoothness, metalness, f0, emission, subsurface, porosity, ao, normalMap,
-//            newCoord, dcdx, dcdy);
 
-//            if ((normalMap.x > -0.999 || normalMap.y > -0.999) && viewVector == viewVector)
-//            newNormal = clamp(normalize(normalMap * tbnMatrix), vec3(-1.0), vec3(1.0));
-//        }
-        #endif
-//
-//
 //        #if REFRACTION == 1
 //        refraction = vec3((newNormal.xy - normal.xy) * 0.5 + 0.5, float(albedo.a < 0.95) * water);
 //        #elif REFRACTION == 2
@@ -310,13 +296,47 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //        #endif
 
         #ifdef TOON_LIGHTMAP
-        lightmap = floor(lmCoord * 14.999) / 14.0;
+        lightmap = floor(lightmap * 14.999) / 14.0;
         lightmap = clamp(lightmap, vec2(0.0), vec2(1.0));
         #endif
 
         albedo.rgb = pow(albedo.rgb, vec3(2.2));
 
         vlAlbedo = albedo.rgb;
+
+        #ifdef MCBL_SS
+        vec3 opaquelightAlbedo = texture2D(colortex8, screenPos.xy).rgb;
+        if (water < 0.5) {
+            opaquelightAlbedo *= vlAlbedo;
+        }
+        lightAlbedo = albedo.rgb + 0.00001;
+
+//        if (portal > 0.5) {
+//            lightAlbedo = lightAlbedo * 0.95 + 0.05;
+//        }
+
+        lightAlbedo = normalize(lightAlbedo + 0.00001) * emission;
+        lightAlbedo = mix(opaquelightAlbedo, sqrt(lightAlbedo), albedo.a);
+
+        #ifdef MULTICOLORED_BLOCKLIGHT
+        lightAlbedo *= GetMCBLLegacyMask(worldPos);
+        #endif
+        #endif
+
+
+        //fudge factor for glass
+        //doesn't look perfect but looks pretty close
+        //the actual albedo and RGB match,
+        //so this is definitely compensating for some other discrepancy
+        if(glass>0.5){
+            albedo.a*=glassAlphaFudge;
+            albedo.rgb*=glassRgbFudge;
+        }
+
+        #ifndef REFLECTION_TRANSLUCENT
+        glass = 0.0;
+        translucent = 0.0;
+        #endif
 
         #ifdef WHITE_WORLD
         albedo.rgb = vec3(0.35);
@@ -343,10 +363,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
             baseReflectance = vec3(0.02);
         }
 
-        #if WATER_FOG == 1
-//        vec3 fogAlbedo = albedo.rgb;
-        #endif
-
         vlAlbedo = mix(vec3(1.0), vlAlbedo, sqrt(albedo.a)) * (1.0 - pow(albedo.a, 64.0));
 
         #if HALF_LAMBERT_INTERNAL == 0
@@ -360,21 +376,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         float NoE = clamp(dot(newNormal, eastVec), -1.0, 1.0);
         float vanillaDiffuse = (0.25 * NoU + 0.75) + (0.667 - abs(NoE)) * (1.0 - abs(NoU)) * 0.15;
         vanillaDiffuse*= vanillaDiffuse;
-
-        #ifdef ADVANCED_MATERIALS
-        vec3 rawAlbedo = albedo.rgb * 0.999 + 0.001;
-        albedo.rgb *= ao;
-
-        #ifdef REFLECTION_SPECULAR
-        albedo.rgb *= 1.0 - metalness * smoothness;
-        #endif
-
-        #ifdef DIRECTIONAL_LIGHTMAP
-        mat3 lightmapTBN = GetLightmapTBN(viewPos);
-        lightmap.x = DirectionalLightmap(lightmap.x, lmCoord.x, newNormal, lightmapTBN);
-        lightmap.y = DirectionalLightmap(lightmap.y, lmCoord.y, newNormal, lightmapTBN);
-        #endif
-        #endif
 
         vec3 shadow = vec3(0.0);
             GetLighting(albedo.rgb, shadow, viewPos, worldPos, normal, lightmap, 1.0, NoL,
@@ -472,22 +473,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
             #endif
         }
 
-        //not really visible even on RD 2
-        #if WATER_FOG == 1
-//        if((isEyeInWater == 0 && water > 0.5) || (isEyeInWater == 1 && water < 0.5)) {
-//            float opaqueDepth = texture2D(vxDepthTexOpaque, screenPos.xy).r;
-//            vec3 opaqueScreenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), opaqueDepth);
-//            #ifdef TAA
-//            vec3 opaqueViewPos = ToNDC(vec3(TAAJitter(opaqueScreenPos.xy, -0.5), opaqueScreenPos.z));
-//            #else
-//            vec3 opaqueViewPos = ToNDC(opaqueScreenPos);
-//            #endif
-//
-//            vec4 waterFog = GetWaterFog(opaqueViewPos - viewPos.xyz, fogAlbedo);
-//            albedo = mix(waterFog, vec4(albedo.rgb, 1.0), albedo.a);
-//        }
-        #endif
-
         //broken?
 //            Fog(albedo.rgb, viewPos);
 
@@ -499,7 +484,12 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     albedo.a *= cloudBlendOpacity;
     #endif
 
-    gl_FragData[0] = albedo;
+    gbufferData0 = albedo;
+
+    #ifdef MCBL_SS
+    /* DRAWBUFFERS:08 */
+    gbufferData1 = vec4(lightAlbedo, 1.0);
+    #endif
 }
 
 #endif
