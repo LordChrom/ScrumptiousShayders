@@ -40,12 +40,6 @@ float time = float(worldTime) * 0.05 * ANIMATION_SPEED;
 #else
 float time = frameTimeCounter * ANIMATION_SPEED;
 #endif
-//
-//#ifdef ADVANCED_MATERIALS
-//vec2 dcdx = dFdx(texCoord);
-//vec2 dcdy = dFdy(texCoord);
-//#endif
-
 
 
 vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
@@ -80,7 +74,6 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 #include "/lib/color/lightSkyColor.glsl"
 #include "/lib/color/skyColor.glsl"
 #include "/lib/color/specularColor.glsl"
-#include "/lib/util/dither.glsl"
 #include "/lib/util/spaceConversion.glsl"
 #include "/lib/atmospherics/weatherDensity.glsl"
 #include "/lib/atmospherics/sky.glsl"
@@ -116,6 +109,8 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 //Program//
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
     uint blockId = parameters.customId;
+    vec4 color = parameters.tinting;
+
 
     #ifdef GLOWING_ORES
     float emissive = float(blockId<=16100 && 15003<=blockId);
@@ -134,7 +129,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec3 baseReflectance  = vec3(0.04);
 
 
-    vec4 color = parameters.tinting;
 
     if(leaves>0){
         color.rgb *= 1.225;
@@ -142,16 +136,14 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     vec4 albedo = parameters.sampledColour * vec4(color.rgb, 1.0);
 
-//    albedo*= uint2vec4RGBA(interData.z).yzwx;
-//albedo *= uint2vec4RGBA(interData.y);
 
-//    albedo = (albedo * uint2vec4RGBA(interData.y)) + vec4(0,0,0,float(interData.w&0xFFu)/255);
+    //for some reason its just approximately that much darker in the LODs.
+    //probably worth diving into the cause of this, but seeing as that affects like every shader im guessing its not BSL's fault
+    #ifdef OVERWORLD
+    albedo.rgb*=1.08;
+    #endif
 
-
-
-    //DEFINITELY move this normal stuff to fragment shaders once voxy lets us do that.
-    //or figure out a way to circumvent this transformation
-    //Also fix translucent if this is fixed
+    //vertex shading :/
     vec3 normal;
     switch(uint(parameters.face)>>1u){
         case 0u:
@@ -165,7 +157,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         break;
     }
     if((parameters.face&1)==0) normal=-normal;
-
 //      normal = vxModelView[((uint(parameters.face)>>1u)+1u)%3u].xyz;
 
     vec3 newNormal = normal;
@@ -183,13 +174,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     #endif
     vec3 worldPos = mat3(vxModelViewInv) * viewPos + vxModelViewInv[3].xyz;
 
-    float dither = Bayer8(gl_FragCoord.xy);
-
-    vec3 noisePos = (worldPos + cameraPosition) * 4.0;
-    float albedoLuma = GetLuminance(albedo.rgb);
-    float noiseAmount = (1.0 - albedoLuma * albedoLuma) * 0.05;
-    float albedoNoise = GetBlueNoise3D(noisePos, normal);
-    albedo.rgb = clamp(albedo.rgb + albedoNoise * noiseAmount, vec3(0.0), vec3(1.0));
 
     #ifdef TOON_LIGHTMAP
     lightmap = floor(lightmap * 14.999) / 14.0;
@@ -241,87 +225,13 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     float vanillaDiffuse = (0.25 * NoU + 0.75) + (0.667 - abs(NoE)) * (1.0 - abs(NoU)) * 0.15;
     vanillaDiffuse*= vanillaDiffuse;
 
-    #ifndef NORMAL_PLANTS
-    if (foliage > 0.5) vanillaDiffuse *= 1.8;
-    #endif
-
-    if (leaves > 0.5) {
-//            float halfNoL = dot(newNormal, lightVec) * 0.5 + 0.5;
-//            basicSubsurface *= halfNoL * step(length(albedo.rgb), 1.7);
-//            basicSubsurface*=2;
-//            albedo.rgb*=1.5;
-    }
-
-
-
 
     float parallaxShadow=1.0;
-
-
-    #ifdef ADVANCED_MATERIALS
-//        vec3 rawAlbedo = albedo.rgb * 0.999 + 0.001;
-//        albedo.rgb *= ao * ao;
-//
-    #ifdef REFLECTION_SPECULAR
-//        albedo.rgb *= 1.0 - metalness * smoothness;
-    #endif
-
-//        float doParallax = 0.0;
-    #ifdef SELF_SHADOW
-//        float parallaxNoL = dot(outNormal, lightVec);
-    #ifdef OVERWORLD
-//        doParallax = float(lightmap.y > 0.0 && parallaxNoL > 0.0);
-    #endif
-    #ifdef END
-//        doParallax = float(parallaxNoL > 0.0);
-    #endif
-//        if (doParallax > 0.5 && skipParallax < 0.5) {
-//            parallaxShadow = GetParallaxShadow(surfaceDepth, parallaxFade, newCoord, lightVec,
-//            tbnMatrix);
-//        }
-    #endif
-//
-    #ifdef DIRECTIONAL_LIGHTMAP
-//        mat3 lightmapTBN = GetLightmapTBN(viewPos);
-//        lightmap.x = DirectionalLightmap(lightmap.x, lihgtmap.x, outNormal, lightmapTBN);
-//        lightmap.y = DirectionalLightmap(lightmap.y, lihgtmap.y, outNormal, lightmapTBN);
-    #endif
-    #endif
-
-
-
-
-
-
     vec3 shadow = vec3(0.0);
 
 
     GetLighting(albedo.rgb, shadow, viewPos, worldPos, normal, lightmap, color.a, NoL,
         vanillaDiffuse, parallaxShadow, emission, subsurface, basicSubsurface);
-
-//        #ifdef ADVANCED_MATERIALS
-//        float puddles = 0.0;
-//
-//        skyOcclusion = lightmap.y;
-//
-//        baseReflectance = mix(vec3(f0), rawAlbedo, metalness);
-//        float fresnel = pow(clamp(1.0 + dot(outNormal, normalize(viewPos.xyz)), 0.0, 1.0), 5.0);
-//
-//        fresnel3 = mix(baseReflectance, vec3(1.0), fresnel);
-//        #if MATERIAL_FORMAT == 1
-//        if (f0 >= 0.9 && f0 < 1.0) {
-//            baseReflectance = GetMetalCol(f0);
-//            fresnel3 = ComplexFresnel(pow(fresnel, 0.2), f0);
-//            #ifdef ALBEDO_METAL
-//            fresnel3 *= rawAlbedo;
-//            #endif
-//        }
-//        #endif
-//
-//        float aoSquared = ao * ao;
-//        shadow *= aoSquared; fresnel3 *= aoSquared;
-//        albedo.rgb = albedo.rgb * (1.0 - fresnel3 * smoothness * smoothness * (1.0 - metalness));
-//        #endif
 
     #if ALPHA_BLEND == 0
     albedo.rgb = sqrt(max(albedo.rgb, vec3(0.0)));

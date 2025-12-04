@@ -137,7 +137,6 @@ float GetLuminance(vec3 color) {
 #include "/lib/color/skyColor.glsl"
 #include "/lib/color/specularColor.glsl"
 #include "/lib/color/waterColor.glsl"
-#include "/lib/util/dither.glsl"
 #include "/lib/util/spaceConversion.glsl"
 #include "/lib/atmospherics/weatherDensity.glsl"
 #include "/lib/atmospherics/sky.glsl"
@@ -172,7 +171,7 @@ struct VoxyFragmentParameters {
 //Program//
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
     #if VOXY_TRANSLUCENTS == 0
-//        discard;
+        discard;
     #endif
 
     vec4 albedo = parameters.sampledColour;
@@ -199,7 +198,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
         vec4 color = parameters.tinting;
 
-        //Convert to vertex shader if possible when voxy lets us. See opaque
+        //voxy vertex shader thing
         vec3 normal;
 
         switch(parameters.face>>1){
@@ -288,17 +287,6 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //        if (water > 0.5) {
 //            normalMap = GetWaterNormal(worldPos, viewPos, vec3(1),normal);
 //            newNormal = clamp(normalize(normalMap * tbnMatrix), vec3(-1.0), vec3(1.0));
-//        }
-        #endif
-
-        #ifdef ADVANCED_MATERIALS
-        float f0 = 0.0, porosity = 0.5, ao = 1.0, skyOcclusion = 0.0;
-//        if (water < 0.5) {
-//            GetMaterials(smoothness, metalness, f0, emission, subsurface, porosity, ao, normalMap,
-//            newCoord, dcdx, dcdy);
-
-//            if ((normalMap.x > -0.999 || normalMap.y > -0.999) && viewVector == viewVector)
-//                newNormal = clamp(normalize(normalMap * tbnMatrix), vec3(-1.0), vec3(1.0));
 //        }
         #endif
 
