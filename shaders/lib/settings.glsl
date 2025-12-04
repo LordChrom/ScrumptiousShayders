@@ -466,7 +466,9 @@ Please don't edit anything from Undefine section and onwards.
 //Voxy//
 #define VOXY_TRANSLUCENTS 2 //[0 1 2 3]
 #define VOXY_TRANSLUCENT_REFLECTIONS 1 //[0 1 ]
-
+#define VOXY_ADVMAT
+#define VOXY_SPECULAR_REFLECTIONS
+#define VOXY_MCBL_SS
 
 //Use style options//
   #if SUN_PATH_ROTATION == -1

@@ -29,7 +29,11 @@ void GetMaterials(out float smoothness, out float metalness, out float f0, inout
     #endif
 
     #if MATERIAL_FORMAT == 1
+    #ifdef VOXY_PATCH
+    vec4 specularMap = texture2D(specular, newCoord, 0);
+    #else
     vec4 specularMap = texture2DLod(specular, newCoord, 0);
+    #endif
     smoothness = specularMap.r;
 
     f0 = specularMap.g;

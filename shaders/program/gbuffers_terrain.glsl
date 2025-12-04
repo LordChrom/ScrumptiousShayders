@@ -147,6 +147,8 @@ float GetLuminance(vec3 color) {
 #include "/lib/lighting/coloredBlocklight.glsl"
 #endif
 
+
+uniform sampler2D blockModelAtlas;
 //Program//
 void main() {
     vec4 albedo = texture2D(texture, texCoord) * vec4(color.rgb, 1.0);
@@ -207,6 +209,19 @@ void main() {
 		#ifdef ADVANCED_MATERIALS
 		float f0 = 0.0, porosity = 0.5, ao = 1.0;
 		vec3 normalMap = vec3(0.0, 0.0, 1.0);
+
+
+		vec2 test=vec2(smoothness)*1;
+		test = vec2(metalness)*10;
+		test = vec2(ao)*0.5;
+		test = newCoord*0.2;
+
+		//		gl_FragData[0]=textureLod(blockModelAtlas, newCoord, 0);return;
+				gl_FragData[0]=texture2D(specular, newCoord);return;
+
+
+		test = texture2DLod(normals, newCoord, 0).xy;
+//		gl_FragData[0]=vec4(test,0,1);return;
 		GetMaterials(smoothness, metalness, f0, emission, subsurface, porosity, ao, normalMap,
 					 newCoord, dcdx, dcdy);
 					 

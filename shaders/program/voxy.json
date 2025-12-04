@@ -116,6 +116,11 @@
         "colortex9":"sampler2D",
         #endif
 
+        #ifdef ADVANCED_MATERIALS
+        "specular":"sampler2D",
+        "normals":"sampler2D",
+        #endif
+
         "vxDepthTexOpaque":"sampler2D",
         "vxDepthTexTrans":"sampler2D",
         #if CLOUDS == 2

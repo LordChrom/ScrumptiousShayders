@@ -12,12 +12,29 @@ https://capttatsu.com
 #ifdef FSH
 #undef MULTICOLORED_BLOCKLIGHT
 
+#ifndef VOXY_ADVMAT
+#undef ADVANCED_MATERIALS
+#endif
+
+#ifndef VOXY_SPECULAR_REFLECTIONS
+#undef REFLECTION_SPECULAR
+#endif
+
+#ifndef VOXY_MCBL_SS
+#undef MCBL_SS
+#endif
+
 #define gbufferModelView            lodModelView
 #define gbufferModelViewInverse     lodModelViewInverse
 #define gbufferProjection           lodProjection
 #define gbufferProjectionInverse    lodProjectionInverse
 #define gbufferPreviousModelView    lodPreviousModelView
 #define gbufferPreviousProjection   lodPreviousProjection
+
+#define texCoord uv
+
+
+vec3 binormal, tangent;
 
 ////Common Variables//
 layout(location = 0) out vec4 gbufferData0;
@@ -41,12 +58,30 @@ float time = float(worldTime) * 0.05 * ANIMATION_SPEED;
 float time = frameTimeCounter * ANIMATION_SPEED;
 #endif
 //
-//#ifdef ADVANCED_MATERIALS
-//vec2 dcdx = dFdx(texCoord);
-//vec2 dcdy = dFdy(texCoord);
-//#endif
+#ifdef ADVANCED_MATERIALS
+//vec2 texCoord;
+vec2 dcdy = dFdy(uv)*.0155;
+vec2 dcdx = dFdx(uv)*.0155;
+#endif
 
+#ifdef MCBL_SS
+//    /* DRAWBUFFERS:08 */
+layout(location = 1) out vec4 gbufferData1;
 
+#if defined ADVANCED_MATERIALS && defined REFLECTION_SPECULAR
+/* DRAWBUFFERS:08367 */
+layout(location = 2) out vec4 gbufferData2;
+layout(location = 3) out vec4 gbufferData3;
+layout(location = 4) out vec4 gbufferData4;
+#endif
+#else
+#if defined ADVANCED_MATERIALS && defined REFLECTION_SPECULAR
+/* DRAWBUFFERS:0367 */
+layout(location = 1) out vec4 gbufferData1;
+layout(location = 2) out vec4 gbufferData2;
+layout(location = 3) out vec4 gbufferData3;
+#endif
+#endif
 
 vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
 
@@ -80,7 +115,6 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 #include "/lib/color/lightSkyColor.glsl"
 #include "/lib/color/skyColor.glsl"
 #include "/lib/color/specularColor.glsl"
-#include "/lib/util/dither.glsl"
 #include "/lib/util/spaceConversion.glsl"
 #include "/lib/atmospherics/weatherDensity.glsl"
 #include "/lib/atmospherics/sky.glsl"
@@ -89,6 +123,12 @@ float GetBlueNoise3D(vec3 pos, vec3 normal) {
 
 //#include "/lib/lighting/forwardLighting.glsl"
 #include "/lib/lighting/lodLighting.glsl"
+
+#ifdef ADVANCED_MATERIALS
+#include "/lib/util/encode.glsl"
+#include "/lib/surface/materialGbuffers.glsl"
+#extension GL_KHR_shader_subgroup_quad: enable
+#endif
 
 #ifdef MCBL_SS
 #include "/lib/util/voxelMapHelper.glsl"
@@ -141,12 +181,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     }
 
     vec4 albedo = parameters.sampledColour * vec4(color.rgb, 1.0);
-
-//    albedo*= uint2vec4RGBA(interData.z).yzwx;
-//albedo *= uint2vec4RGBA(interData.y);
-
-//    albedo = (albedo * uint2vec4RGBA(interData.y)) + vec4(0,0,0,float(interData.w&0xFFu)/255);
-
+//    texCoord = parameters.uv;
 
 
     //DEFINITELY move this normal stuff to fragment shaders once voxy lets us do that.
@@ -183,13 +218,40 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     #endif
     vec3 worldPos = mat3(vxModelViewInv) * viewPos + vxModelViewInv[3].xyz;
 
-    float dither = Bayer8(gl_FragCoord.xy);
 
-    vec3 noisePos = (worldPos + cameraPosition) * 4.0;
-    float albedoLuma = GetLuminance(albedo.rgb);
-    float noiseAmount = (1.0 - albedoLuma * albedoLuma) * 0.05;
-    float albedoNoise = GetBlueNoise3D(noisePos, normal);
-    albedo.rgb = clamp(albedo.rgb + albedoNoise * noiseAmount, vec3(0.0), vec3(1.0));
+
+    #ifdef ADVANCED_MATERIALS
+
+
+    vec2 newCoord = parameters.uv;
+
+    #ifdef REFLECTION_SPECULAR
+    float smoothness = 0.0;
+    #endif
+    vec3 fresnel3 = vec3(0.0);
+
+    float f0 = 0.0, porosity = 0.5, ao = 1.0;
+    vec3 normalMap = vec3(0.0, 0.0, 1.0);
+
+
+    //The rest of the stuff mostly works, this is just debug stuff to dirtectly look at the specular map
+    //the specular and normal maps staright up doesnt work, so I'm leaving it like this just to demonstrate
+    gbufferData0 = texture2D(specular, newCoord);return;
+
+
+
+    GetMaterials(smoothness, metalness, f0, emission, subsurface, porosity, ao, normalMap,
+    uv, dcdx, dcdy);
+
+    mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
+    tangent.y, binormal.y, normal.y,
+    tangent.z, binormal.z, normal.z);
+
+//    if ((normalMap.x > -0.999 || normalMap.y > -0.999) && viewVector == viewVector)
+    if ((normalMap.x > -0.999 || normalMap.y > -0.999))
+    newNormal = clamp(normalize(normalMap * tbnMatrix), vec3(-1.0), vec3(1.0));
+    #endif
+
 
     #ifdef TOON_LIGHTMAP
     lightmap = floor(lightmap * 14.999) / 14.0;
@@ -218,7 +280,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     lightAlbedo = sqrt(normalize(lightAlbedo) * emission);
 
     #ifdef MULTICOLORED_BLOCKLIGHT
-//        lightAlbedo *= GetMCBLLegacyMask(worldPos);
+        lightAlbedo *= GetMCBLLegacyMask(worldPos);
     #endif
     #endif
 
@@ -263,7 +325,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //        albedo.rgb *= ao * ao;
 //
     #ifdef REFLECTION_SPECULAR
-//        albedo.rgb *= 1.0 - metalness * smoothness;
+        albedo.rgb *= 1.0 - metalness * smoothness;
     #endif
 
 //        float doParallax = 0.0;
@@ -330,6 +392,27 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     /* DRAWBUFFERS:0 */
     gbufferData0 = albedo;
+
+    #ifdef MCBL_SS
+        /* DRAWBUFFERS:08 */
+        gbufferData1 = vec4(lightAlbedo, 1.0);
+        gbufferData1 = vec4(10,0,1.0, 1.0);
+
+
+        #if defined ADVANCED_MATERIALS && defined REFLECTION_SPECULAR
+        /* DRAWBUFFERS:08367 */
+        gbufferData2 = vec4(smoothness, lightmap.y, 0.0, 1.0);
+        gbufferData3 = vec4(EncodeNormal(newNormal), float(gl_FragCoord.z < 1.0), 1.0);
+        gbufferData4 = vec4(fresnel3, 1.0);
+        #endif
+        #else
+        #if defined ADVANCED_MATERIALS && defined REFLECTION_SPECULAR
+        /* DRAWBUFFERS:0367 */
+        gbufferData1 = vec4(smoothness, lightmap.y, 0.0, 1.0);
+        gbufferData2 = vec4(EncodeNormal(newNormal), float(gl_FragCoord.z < 1.0), 1.0);
+        gbufferData3 = vec4(fresnel3, 1.0);
+        #endif
+    #endif
 }
 
 #endif
