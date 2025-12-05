@@ -40,7 +40,7 @@ vec2 Reprojection(vec3 pos) {
 
 float GetMCBLLegacyMask(vec3 worldPos) {
 	#if MCBL_SS_MODE == 0 && defined MULTICOLORED_BLOCKLIGHT
-	vec3 maskPos = abs(worldPos / (voxelMapSize / 2));
+	vec3 maskPos = abs(worldPos / (voxelMapSize / 2)*2);
 	return float(maskPos.x > 0.9 || maskPos.y > 0.9 || maskPos.y > 0.9);
 	#else
 	return 1.0;

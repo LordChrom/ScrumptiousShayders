@@ -235,7 +235,7 @@ Please don't edit anything from Undefine section and onwards.
   #define VIGNETTE
   #define VIGNETTE_STRENGTH 1.06 //[0.26 0.51 0.72 0.91 1.06 1.19 1.28 1.36 1.40 1.41]
   #define CHROMATIC_ABERRATION 0 //[0 1 2 3 4]
-  #define UNDERWATER_DISTORTION
+//#define UNDERWATER_DISTORTION
 
 //Anti-aliasing
 //#define FXAA
