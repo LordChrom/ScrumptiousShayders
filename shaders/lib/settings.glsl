@@ -58,7 +58,7 @@ Please don't edit anything from Undefine section and onwards.
 
   #define MCBL_FOG
   #define MCBL_FOG_STRENGTH 1.75 //[0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 2.25 2.50 2.75 3.00 3.25 3.50 3.75 4.00]
-  #define MCBL_DISTANCE 192 //[64 96 128 192 256 384 512]
+  #define MCBL_DISTANCE 128 //[128 192 256 384 512]
 //#define MCBL_HALF_HEIGHT
 //#define MCBL_RANDOM
   #define MCBL_SS
@@ -405,7 +405,7 @@ Please don't edit anything from Undefine section and onwards.
 //#define USE_FOG_COLOR
   #define SKY_BLEND 1.0 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
   #define FOG_BLEND 1.0 //[0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
-//#define NETHER_VANILLA
+  #define NETHER_VANILLA
 //#define EMISSIVE_RECOLOR
 
 //Tonemap & Color Grading//

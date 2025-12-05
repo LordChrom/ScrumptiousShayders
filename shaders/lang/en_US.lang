@@ -4,9 +4,10 @@
 profile.MINIMUM=Minimum
 profile.LOW=Low
 profile.MEDIUM=Medium
+profile.MEDIUM_HIGH=Medium High
 profile.HIGH=High
 profile.ULTRA=Ultra
-profile.comment=Minimum: no shadows, no extra effects. Low : low shadows, no extra effects. Medium : low-medium shadows, and ambient occlusion. High : medium shadows, AO light shafts, and TAA. Ultra : high shadows, AO, light shafts, and TAA.
+profile.comment=Minimum: no shadows, no extra effects. Low : low shadows, no extra effects. Medium : low-medium shadows, basic colored colored light and shadow, light shafts, and AO. Medium-high: More advanced colored lighting. High : medium shadows, and more advanced colored lighting. Ultra : high shadows.
 
 #Screens
 screen.LIGHTING=Lighting
@@ -98,7 +99,7 @@ option.SHADOW.comment=Enables realtime, dynamic shadow mapping.
 
 option.shadowMapResolution=Shadowmap Quality
 option.shadowMapResolution.comment=Adjusts shadowmap size. §e[*]§rHigher resolution gives sharper shadows, but reduces performance.
-value.shadowMapResolution.512=Dismal (256)
+value.shadowMapResolution.256=Dismal (256)
 value.shadowMapResolution.512=Very Low (512)
 value.shadowMapResolution.1024=Low (1K)
 value.shadowMapResolution.1536=Low Medium (1.5K)
