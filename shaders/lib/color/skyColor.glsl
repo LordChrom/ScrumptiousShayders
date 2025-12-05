@@ -1,7 +1,10 @@
 #if SKY_VANILLA_INTERNAL == 1
 #ifndef VOXY_PATCH
 uniform vec3 skyColor;
+
+#if (!defined NETHER || !defined NETHER_VANILLA)
 uniform vec3 fogColor;
+#endif
 #endif
 
 vec3 skyCol = pow(skyColor, vec3(2.2)) * SKY_I * SKY_I;

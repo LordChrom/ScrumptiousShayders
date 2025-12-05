@@ -5,7 +5,9 @@ vec4 netherWarped  = vec4(vec3(NETHER_WR, NETHER_WG, NETHER_WB) / 255.0, 1.0) * 
 vec4 netherBasalt  = vec4(vec3(NETHER_BR, NETHER_BG, NETHER_BB) / 255.0, 1.0) * NETHER_BI;
 
 #ifdef NETHER_VANILLA
+#ifndef VOXY_PATCH
 uniform vec3 fogColor;
+#endif
 vec4 netherColSqrt = vec4(normalize(fogColor + 0.0001), length(fogColor));
 #else
 #ifdef WEATHER_PERBIOME
