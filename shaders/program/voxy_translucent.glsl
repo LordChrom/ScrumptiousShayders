@@ -3,6 +3,7 @@ BSL Shaders v10 Series by Capt Tatsu
 https://capttatsu.com 
 */
 #define VOXY_PATCH
+#define texture2D texture
 
 //Settings//
 #include "/lib/settings.glsl"

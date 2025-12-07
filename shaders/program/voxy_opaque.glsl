@@ -4,6 +4,7 @@ https://capttatsu.com
 */
 
 #define VOXY_PATCH
+#define texture2D texture
 
 //Settings//
 #include "/lib/settings.glsl"
