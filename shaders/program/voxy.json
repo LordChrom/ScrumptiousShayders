@@ -108,9 +108,9 @@
         "relativeEyePosition",
         "heldItemId",
         "heldItemId2",
-        "previousCameraPosition",
         #endif
 
+        "previousCameraPosition",
         "eyeBrightnessSmooth"
 
     ],
@@ -121,7 +121,7 @@
                 "shadowtex1": "sampler2DShadow",
                 "shadowcolor0": "sampler2D",
             #endif
-        #endif,
+        #endif
 
 	    #ifdef MCBL_SS
         "colortex8":"sampler2D",
