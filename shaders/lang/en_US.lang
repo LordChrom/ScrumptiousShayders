@@ -6,7 +6,7 @@ profile.LOW=Low
 profile.MEDIUM=Medium
 profile.HIGH=High
 profile.ULTRA=Ultra
-profile.comment=Minimum: no shadows, no extra effects. Low : low shadows, AO, nothing else. Medium : low-medium shadows, basic colored colored light and shadow. High: light shafts, more advanced colored lighting. Ultra : higher shadows, best lighting.
+profile.comment=Minimum: no shadows, no extra effects. Low : low shadows, AO, nothing else. Medium : low-medium shadows, basic colored colored light and shadow. High: light shafts, more advanced colored lighting, sky reflections. Ultra : higher shadows, best lighting, terrain reflections.
 
 #Screens
 screen.LIGHTING=Lighting
