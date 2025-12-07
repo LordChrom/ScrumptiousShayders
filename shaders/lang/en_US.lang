@@ -1184,7 +1184,7 @@ option.WHITE_WORLD.comment=Replaces textures with flat white color.
 
 #Lods
 option.VOXY_TRANSLUCENT_REFLECTIONS=Voxy Reflections
-option.VOXY_TRANSLUCENT_REFLECTIONS.comment=§e[*]§rRequires Voxy Translucents=Full Behavior of voxy translucent reflections. Simple should be fine. Full is more accurate, but slower & doesn't use frevious frame reflections
+option.VOXY_TRANSLUCENT_REFLECTIONS.comment=Behavior of voxy translucent reflections. §e[*]§rRequires Voxy Translucents=Full. Simple should be fine at a distance. Full is more accurate, but slower & doesn't use previous frame reflections
 value.VOXY_TRANSLUCENT_REFLECTIONS.0=None
 value.VOXY_TRANSLUCENT_REFLECTIONS.1=Simple
 value.VOXY_TRANSLUCENT_REFLECTIONS.2=Full
