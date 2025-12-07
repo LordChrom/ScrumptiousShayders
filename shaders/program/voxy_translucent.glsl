@@ -3,6 +3,7 @@ BSL Shaders v10 Series by Capt Tatsu
 https://capttatsu.com 
 */
 #define VOXY_PATCH
+#define texture2D texture
 
 //Settings//
 #include "/lib/settings.glsl"
@@ -11,6 +12,7 @@ https://capttatsu.com
 #ifdef FSH
 
 #undef MULTICOLORED_BLOCKLIGHT
+#undef REFLECTION_PREVIOUS
 
 layout(location = 0) out vec4 gbufferData0;
 #ifdef MCBL_SS
@@ -43,6 +45,9 @@ layout(location = 1) out vec4 gbufferData1;
 //Common Variables//
 const float glassAlphaFudge = 0.6;
 const float glassRgbFudge =1.2;
+
+const float glassReflectionRgbFudge =2;
+const float glassReflectionAlphaFudge = 0.5;
 
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
@@ -180,7 +185,7 @@ struct VoxyFragmentParameters {
 //Program//
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
     #if VOXY_TRANSLUCENTS == 0
-        discard;
+        if (true) discard; //if true because syntax highlighter is confused otherwise
     #endif
 
     vec4 albedo = parameters.sampledColour;
@@ -394,16 +399,19 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
             fresnel*= max(1.0 - isEyeInWater * 0.5 * water, 0.5);
 
             #if REFLECTION == 2
-            if(parameters.face!=0){
                 #if VOXY_TRANSLUCENT_REFLECTIONS == 2
-                    reflection = SimpleReflection(viewPos, newNormal, dither, reflectionMask);
+                    reflection = VoxyReflection(viewPos, newNormal, dither, reflectionMask);
                 #else
-                    reflection = DHReflection(viewPos, newNormal, dither, reflectionMask);
+                    if(parameters.face!=0){
+                        reflection = DHReflection(viewPos, newNormal, dither, reflectionMask);
+                    }
                 #endif
-            }
             reflection.rgb = pow(reflection.rgb * 2.0, vec3(8.0));
 
-
+            if(glass>0.5){
+                reflection.rgb*=glassReflectionRgbFudge;
+                reflection.a*=glassReflectionAlphaFudge;
+            }
             #endif
 
 

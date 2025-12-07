@@ -71,3 +71,44 @@ vec4 DHReflection(vec3 viewPos, vec3 normal, float dither, out float reflectionM
 	
     return color;
 }
+
+#ifdef VOXY_PATCH
+vec4 VoxyReflection(vec3 viewPos, vec3 normal, float dither, out float reflectionMask) {
+	vec4 color = vec4(0.0);
+	float border = 0.0;
+	reflectionMask = 0.0;
+
+	#if REFLECTION_PRECISION_INTERNAL == 1
+	float inc = 1.4;
+	int maxf = 6;
+	#else
+	float inc = 2.0;
+	int maxf = 4;
+	#endif
+
+	vec4 pos = Raytrace(vxDepthTexOpaque, viewPos, normal, dither, border, maxf, 1.0, 0.1, inc);
+
+	border = clamp(13.333 * (1.0 - border), 0.0, 1.0);
+
+	#ifdef REFLECTION_SKYBOX
+	float zThreshold = 1.0 + 1e-5;
+	#else
+	float zThreshold = 1.0;
+	#endif
+
+	if (pos.z < zThreshold) {
+		color = texture2D(gaux2, pos.st);
+
+		reflectionMask = color.a;
+
+		#ifdef REFLECTION_SKYBOX
+		color.a = 1.0;
+		#endif
+
+		color.a *= border;
+		reflectionMask *= border;
+	}
+
+	return color;
+}
+#endif
