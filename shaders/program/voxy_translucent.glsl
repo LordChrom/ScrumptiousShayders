@@ -49,6 +49,10 @@ const float glassRgbFudge =1.2;
 const float glassReflectionRgbFudge =2;
 const float glassReflectionAlphaFudge = 0.5;
 
+const float waterAlphaFudge = 1.2;
+const float waterRgbFudge =1.1;
+
+
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));
 float ang1 = fract(timeAngle - 0.25);
 float ang = (ang1 + (cos(ang1 * 3.14159265358979) * -0.5 + 0.5 - ang1) / 3.0) * 6.28318530717959;
@@ -75,68 +79,73 @@ float GetLuminance(vec3 color) {
 
 //these compile, but waving water is kind of a non-starter without voxy vertex shaders
 
-//float GetWaterHeightMap(vec3 worldPos, vec2 offset) {
-//    float noise = 0.0, noiseA = 0.0, noiseB = 0.0;
+float GetWaterHeightMap(vec3 worldPos, vec2 offset) {
+    float noise = 0.0, noiseA = 0.0, noiseB = 0.0;
+
+    vec2 wind = vec2(time) * 0.5 * WATER_SPEED;
+
+    worldPos.xz += worldPos.y * 0.2;
+
+    #if WATER_NORMALS_INTERNAL == 1
+    offset /= 256.0;
+    noiseA = texture2D(noisetex, (worldPos.xz - wind) / 256.0 + offset).g;
+    noiseB = texture2D(noisetex, (worldPos.xz + wind) / 48.0 + offset).g;
+    #elif WATER_NORMALS_INTERNAL == 2
+    offset /= 256.0;
+    noiseA = texture2D(noisetex, (worldPos.xz - wind) / 256.0 + offset).r;
+    noiseB = texture2D(noisetex, (worldPos.xz + wind) / 96.0 + offset).r;
+    noiseA *= noiseA; noiseB *= noiseB;
+    #endif
+
+    #if WATER_NORMALS_INTERNAL > 0
+    noise = mix(noiseA, noiseB, WATER_DETAIL);
+    #endif
+
+    return noise * WATER_BUMP;
+}
+
+vec3 GetParallaxWaves(vec3 worldPos, vec3 viewVector, float dist) {
+
+    vec3 parallaxPos = worldPos;
+//    return vec3(dist*0.1);
+//    return vec3(GetWaterHeightMap(parallaxPos, vec2(0.0)));
 //
-//    vec2 wind = vec2(time) * 0.5 * WATER_SPEED;
-//
-//    worldPos.xz += worldPos.y * 0.2;
-//
-//    #if WATER_NORMALS_INTERNAL == 1
-//    offset /= 256.0;
-//    noiseA = texture2D(noisetex, (worldPos.xz - wind) / 256.0 + offset).g;
-//    noiseB = texture2D(noisetex, (worldPos.xz + wind) / 48.0 + offset).g;
-//    #elif WATER_NORMALS_INTERNAL == 2
-//    offset /= 256.0;
-//    noiseA = texture2D(noisetex, (worldPos.xz - wind) / 256.0 + offset).r;
-//    noiseB = texture2D(noisetex, (worldPos.xz + wind) / 96.0 + offset).r;
-//    noiseA *= noiseA; noiseB *= noiseB;
-//    #endif
-//
-//    #if WATER_NORMALS_INTERNAL > 0
-//    noise = mix(noiseA, noiseB, WATER_DETAIL);
-//    #endif
-//
-//    return noise * WATER_BUMP;
-//}
-//
-//vec3 GetParallaxWaves(vec3 worldPos, vec3 viewVector, float dist) {
-//    vec3 parallaxPos = worldPos;
-//
-//    for(int i = 0; i < 4; i++) {
-//        float height = -1.25 * GetWaterHeightMap(parallaxPos, vec2(0.0)) + 0.25;
-//        parallaxPos.xz += height * viewVector.xy / dist;
-//    }
-//    return parallaxPos;
-//}
-//
-//vec3 GetWaterNormal(vec3 worldPos, vec3 viewPos, vec3 viewVector, vec3 normal) {
-//    vec3 waterPos = worldPos + cameraPosition;
-//
-//    #if WATER_PIXEL > 0
-//    waterPos = floor(waterPos * WATER_PIXEL) / WATER_PIXEL;
-//    #endif
-//
-//    #ifdef WATER_PARALLAX
-//    waterPos = GetParallaxWaves(waterPos, viewVector,0);
-//    #endif
-//
-//    float normalOffset = WATER_SHARPNESS;
-//
-//    float fresnel = pow(clamp(1.0 + dot(normalize(normal), normalize(viewPos)), 0.0, 1.0), 8.0);
-//    float normalStrength = 0.35 * (1.0 - fresnel);
-//
-//    float h1 = GetWaterHeightMap(waterPos, vec2( normalOffset, 0.0));
-//    float h2 = GetWaterHeightMap(waterPos, vec2(-normalOffset, 0.0));
-//    float h3 = GetWaterHeightMap(waterPos, vec2(0.0,  normalOffset));
-//    float h4 = GetWaterHeightMap(waterPos, vec2(0.0, -normalOffset));
-//
-//    float xDelta = (h2 - h1) / normalOffset;
-//    float yDelta = (h4 - h3) / normalOffset;
-//
-//    vec3 normalMap = vec3(xDelta, yDelta, 1.0 - (xDelta * xDelta + yDelta * yDelta));
-//    return normalMap * normalStrength + vec3(0.0, 0.0, 1.0 - normalStrength);
-//}
+    for(int i = 0; i < 4; i++) {
+        float height = -1.25 * GetWaterHeightMap(parallaxPos, vec2(0.0)) + 0.25;
+        parallaxPos.xz += height * viewVector.xy / dist;
+    }
+    return parallaxPos;
+}
+
+vec3 GetWaterNormal(vec3 worldPos, vec3 viewPos, vec3 viewVector, vec3 normal) {
+    vec3 waterPos = worldPos + cameraPosition;
+
+    #if WATER_PIXEL > 0
+    waterPos = floor(waterPos * WATER_PIXEL) / WATER_PIXEL;
+    #endif
+
+    #ifdef WATER_PARALLAX
+//    float dist = length(viewVector);
+    waterPos = GetParallaxWaves(waterPos, viewVector,length(viewVector));
+    #endif
+//    return waterPos*0.1;
+
+    float normalOffset = WATER_SHARPNESS;
+
+    float fresnel = pow(clamp(1.0 + dot(normalize(normal), normalize(viewPos)), 0.0, 1.0), 8.0);
+    float normalStrength = 0.35 * (1.0 - fresnel);
+
+    float h1 = GetWaterHeightMap(waterPos, vec2( normalOffset, 0.0));
+    float h2 = GetWaterHeightMap(waterPos, vec2(-normalOffset, 0.0));
+    float h3 = GetWaterHeightMap(waterPos, vec2(0.0,  normalOffset));
+    float h4 = GetWaterHeightMap(waterPos, vec2(0.0, -normalOffset));
+
+    float xDelta = (h2 - h1) / normalOffset;
+    float yDelta = (h4 - h3) / normalOffset;
+
+    vec3 normalMap = vec3(xDelta, yDelta, 1.0 - (xDelta * xDelta + yDelta * yDelta));
+    return normalMap * normalStrength + vec3(0.0, 0.0, 1.0 - normalStrength);
+}
 
 //Includes//
 #include "/lib/color/blocklightColor.glsl"
@@ -278,21 +287,48 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //        #endif
 
 
-        #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2 || defined ADVANCED_MATERIALS
-//        vec3 normalMap = vec3(0.0, 0.0, 1.0);
+
+
+
+
+        #if WATER_NORMALS_INTERNAL > 0 || defined ADVANCED_MATERIALS
+
+        //base BSL could probably use this instead to save some matrix mults, I should think.
+        vec3 tangent = vxModelView[0].xyz;
+        vec3 binormal = vxModelView[2].xyz;
+
+        vec3 normalMap = vec3(0.0, 0.0, 1.0);
+
+        mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
+              tangent.y, binormal.y, normal.y,
+              tangent.z, binormal.z, normal.z);
+
+        vec3 viewVector = vec3(worldPos.x,worldPos.z,0);
+
+        #endif
+
+
+
+
+        #if WATER_NORMALS_INTERNAL > 0
+        if (water > 0.5) {
+//            #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2
+            normalMap = GetWaterNormal(worldPos, viewPos, viewVector,normal);
+            newNormal = clamp(normalize(normalMap * tbnMatrix), vec3(-1.0), vec3(1.0));
+
+            //Keep this for later if voxy adds PBR support
+//            #elif WATER_NORMALS_INTERNAL == 3 && defined ADVANCED_MATERIALS
+//            float tempF0 = 0.0, tempPorosity = 0.5, tempAo = 1.0;
+//            GetMaterials(smoothness, metalness, tempF0, emission, subsurface, tempPorosity, tempAo, normalMap,
+//            newCoord, dcdx, dcdy);
+//            metalness = 0.0;
+//            emission = 0.0;
 //
-//        mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
-//              tangent.y, binormal.y, normal.y,
-//              tangent.z, binormal.z, normal.z);
-        #endif
-
-        #if WATER_NORMALS_INTERNAL == 1 || WATER_NORMALS_INTERNAL == 2
-//        if (water > 0.5) {
-//            normalMap = GetWaterNormal(worldPos, viewPos, vec3(1),normal);
 //            newNormal = clamp(normalize(normalMap * tbnMatrix), vec3(-1.0), vec3(1.0));
-//        }
-        #endif
+//            #endif
+        }
 
+        #endif
 
 //        #if REFRACTION == 1
 //        refraction = vec3((newNormal.xy - normal.xy) * 0.5 + 0.5, float(albedo.a < 0.95) * water);
@@ -338,6 +374,15 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
             albedo.rgb*=glassRgbFudge;
         }
 
+        if(water>0.5){
+            albedo.a*=waterAlphaFudge;
+            albedo.rgb*=waterRgbFudge;
+        }
+
+//        float debug = albedo.b*0.5;
+//        gbufferData0=vec4(vec3(debug),1);return;
+
+
         #ifndef REFLECTION_TRANSLUCENT
         glass = 0.0;
         translucent = 0.0;
@@ -347,17 +392,16 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         albedo.rgb = vec3(0.35);
         #endif
 
-        if (water > 0.5 || ((translucent + glass) > 0.5 && albedo.a < 0.95)) {
-
+        if (water > 0.5) {
             #if WATER_MODE_INTERNAL == 0
-            albedo.rgb = waterColor.rgb * waterColor.a / albedo.a;
+            albedo.rgb = waterColor.rgb * waterColor.a;
             #elif WATER_MODE_INTERNAL == 1
             albedo.rgb *= WATER_VI * WATER_VI;
             #elif WATER_MODE_INTERNAL == 2
-            float waterLuma = length(albedo.rgb / pow(color.rgb, vec3(2.2)));
+            float waterLuma = length(albedo.rgb / pow(color.rgb, vec3(2.2))) * 2.0;
             albedo.rgb = waterLuma * waterColor.rgb * waterColor.a;
             #elif WATER_MODE_INTERNAL == 3
-            albedo.rgb *= WATER_VI * WATER_VI * 2.0;
+            albedo.rgb = color.rgb * color.rgb * WATER_VI * WATER_VI;
             #endif
             #if WATER_ALPHA_MODE_INTERNAL == 0
             albedo.a = waterAlpha;
