@@ -49,8 +49,8 @@ const float glassRgbFudge =1.2;
 const float glassReflectionRgbFudge =2;
 const float glassReflectionAlphaFudge = 0.5;
 
-const float waterAlphaFudge = 1.2;
-const float waterRgbFudge =1.1;
+const float waterAlphaFudge = 1.1;
+const float waterRgbFudge =1.5;
 
 
 const vec2 sunRotationData = vec2(cos(sunPathRotation * 0.01745329251994), -sin(sunPathRotation * 0.01745329251994));

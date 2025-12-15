@@ -37,8 +37,6 @@ float eBS = eyeBrightnessSmooth.y / 240.0;
 float sunVisibility  = clamp(dot( sunVec, upVec) * 10.0 + 0.5, 0.0, 1.0);
 float moonVisibility = clamp(dot(-sunVec, upVec) * 10.0 + 0.5, 0.0, 1.0);
 
-float dayPower = sunVisibility;
-
 #ifdef WORLD_TIME_ANIMATION
 float time = float(worldTime) * 0.05 * ANIMATION_SPEED;
 #else
@@ -120,7 +118,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     float leaves   = float(blockId==10500);
 
-    if(parameters.sampledColour.a<0.001){
+    if(parameters.sampledColour.a<0.01){
 
         #if VOXY_FAKE_LEAF_SHADOW == 1 || VOXY_FAKE_LEAF_SHADOW == 3
         if(leaves>0){
@@ -166,9 +164,9 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     if(leaves>0){
         color.rgb*-1.225/1.08;
 
-        #if VOXY_FAKE_LEAF_SHADOW == 2 || VOXY_FAKE_LEAF_SHADOW == 3
+        #if *VOXY_FAKE_LEAF_SHADOW == 2 || VOXY_FAKE_LEAF_SHADOW == 3) && defined SHADOW
         if((uint(parameters.face)>>1u!=0u) && lightmap.y>=0.95){
-            color.rgb*=0.8;
+            color.rgb*=1-(0.2*sunVisibility);
         }
         #endif
     }
