@@ -1202,3 +1202,6 @@ value.VOXY_FAKE_LEAF_SHADOW.0 = None
 value.VOXY_FAKE_LEAF_SHADOW.1 = Dither
 value.VOXY_FAKE_LEAF_SHADOW.2 = Darken
 value.VOXY_FAKE_LEAF_SHADOW.3 = Both
+
+option.LOD_TAPER_WAVES=Taper Waves
+option.LOD_TAPER_WAVES.comment = Makes waves taper off smoothly near the LOD border, rather than having an abrupt boundary.

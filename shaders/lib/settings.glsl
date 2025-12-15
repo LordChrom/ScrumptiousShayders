@@ -467,6 +467,7 @@ Please don't edit anything from Undefine section and onwards.
 #define VOXY_TRANSLUCENTS 3 //[0 1 2 3]
 #define VOXY_TRANSLUCENT_REFLECTIONS 2 //[0 1 2]
 #define VOXY_FAKE_LEAF_SHADOW 3 //[0 1 2 3]
+#define LOD_TAPER_WAVES
 
 
 //Use style options//

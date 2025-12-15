@@ -52,3 +52,8 @@ uniform float dhFarPlane;
 #define lodDepthTex1 dhDepthTex1
 
 #endif
+
+
+#ifndef VOXY
+#undef LOD_TAPER_WAVES
+#endif

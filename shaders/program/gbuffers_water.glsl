@@ -732,6 +732,7 @@ uniform int worldTime;
 
 uniform float frameTimeCounter;
 uniform float timeAngle;
+uniform float far;
 
 uniform vec3 cameraPosition;
 
@@ -757,11 +758,22 @@ float time = frameTimeCounter * ANIMATION_SPEED;
 
 //Common Functions//
 float WavingWater(vec3 worldPos) {
+	#ifdef LOD_TAPER_WAVES
+	float distFade = length(worldPos)/far;
+
+	distFade = clamp((0.5-distFade)*2+0.75,0,1);
+	#endif
+
 	worldPos += cameraPosition;
 	float fractY = fract(worldPos.y + 0.005);
 		
 	float wave = sin(6.2831854 * (time * 0.7 + worldPos.x * 0.14 + worldPos.z * 0.07)) +
 				 sin(6.2831854 * (time * 0.5 + worldPos.x * 0.10 + worldPos.z * 0.20));
+
+	#ifdef LOD_TAPER_WAVES
+	wave=wave*distFade+0.15*(1-distFade);
+	#endif
+
 	if (fractY > 0.01) return wave * 0.0125;
 	
 	return 0.0;
